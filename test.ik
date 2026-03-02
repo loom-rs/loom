@@ -1,15 +1,9 @@
-let const = 5;
-
-type Dog {
-    fn init(a) {
-        self.a = a;
-        self.b = const;
+fn fib(n) {
+    if n <= 1 {
+        return n;
+    } else {
+        return fib(n - 1) + fib(n - 2);
     }
 }
 
-let dog = Dog(3);
-let dog2 = dog;
-println(dog.a);
-println(dog2.a);
-println(dog.b);
-println(dog2.b);
+println(fib(30));
