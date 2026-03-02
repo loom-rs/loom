@@ -1,4 +1,4 @@
-# 🛰️ Syntax examples
+## 📐 Syntax examples
 
 This document describes syntax of the `tick` programming language.
 
