@@ -1,0 +1,36 @@
+---
+source: crates/tick_tests/src/parse.rs
+expression: result
+---
+Block {
+    span: Span(
+        9..44,
+    ),
+    statements: [
+        Let {
+            span: Span(
+                9..23,
+            ),
+            name: "id",
+            value: Variable {
+                span: Span(
+                    18..23,
+                ),
+                name: "value",
+            },
+        },
+        Assign {
+            span: Span(
+                33..43,
+            ),
+            name: "id",
+            op: Assign,
+            value: Variable {
+                span: Span(
+                    38..43,
+                ),
+                name: "value",
+            },
+        },
+    ],
+}

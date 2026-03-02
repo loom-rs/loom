@@ -1,0 +1,15 @@
+[package]
+name = "tick_tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+insta = "1.46.3"
+tick_common = { path = "../tick_common" }
+tick_lex = { path = "../tick_lex" }
+tick_parse = { path = "../tick_parse" }
+tick_sema = { path = "../tick_sema" }
+tick_ast = { path = "../tick_ast" }
+tick_rt = { path = "../tick_rt" }
+miette = { git = "https://github.com/tick-io/miette", features = ["fancy"] }
+regex = "1.12.3"

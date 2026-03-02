@@ -1,6 +1,6 @@
 # 🛰️ Syntax examples
 
-This document describes syntax of the `Bit` programming language.
+This document describes syntax of the `tick` programming language.
 
 ### Data types
 
@@ -19,11 +19,11 @@ This document describes syntax of the `Bit` programming language.
 | any       | `Rc<dyn std::any::Any>` |
 
 ### Variable declaration
-`Bit` does not support variables shadowing, so here's
+`tick` does not support variables shadowing, so here's
 a way to define variable and to reassign it.
 
 Variable definition:
-```bit
+```tick
 let id = value;
 ```
 
@@ -33,21 +33,21 @@ id = value;
 ```
 
 ### Binary operations
-`Bit` supports following binary operations:
+`tick` supports following binary operations:
 
-```bit
+```tick
 + - * / % && & || | ^ > < == !=
 ```
 
 ### Unary operations
-`Bit` supports following unary operations:
+`tick` supports following unary operations:
 
 ```
 - !
 ```
 
 ### Compound operators
-`Bit` supports following compound operators:
+`tick` supports following compound operators:
 
 ```
 id += value;
@@ -77,9 +77,9 @@ Examples of the values:
 | any       | any_native_value           |
 
 ### Functions example
-Here's an example on how you can define function in `Bit`:
+Here's an example on how you can define function in `tick`:
 
-```bit
+```tick
 fn fib(x) {
   if x <= 1 {
     return x;
@@ -89,9 +89,9 @@ fn fib(x) {
 }
 ```
 
-Bit supports closures.
+tick supports closures.
 
-```bit
+```tick
 fn a() {
   let x = 1;
   fn b() {
@@ -109,8 +109,8 @@ b(); // x = 5
 
 ### Classes or custom data types
 
-Bit supports custom data types. Here is example:
-```bit
+tick supports custom data types. Here is example:
+```tick
 type Dog {
   fn init() {
     self.food = 3;
@@ -127,7 +127,7 @@ let b = dog.food;
 ```
 
 ### Comments
-Bit comments examples:
+tick comments examples:
 
 ```
 #[
@@ -143,7 +143,7 @@ brackets
 ```
 
 ### Usings
-Bit is modular:
+tick is modular:
 ```
 use a # import `a` as `a`
 use a as b # import `a` as `b`
@@ -152,7 +152,7 @@ use a for b, c # import multiple items
 ```
 
 ### Loops
-Bit loops examples:
+tick loops examples:
 
 For loop with range examples.
 You can use any expression instead of numbers in range.
@@ -174,7 +174,7 @@ for i in 100..=0 {
 }
 ```
 
-While loop examples. You can see, that `bit` supports `continue` and `break` keywords
+While loop examples. You can see, that `tick` supports `continue` and `break` keywords
 ```
 let i = 0;
 while true {

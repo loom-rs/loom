@@ -1,8 +1,0 @@
-[package]
-name = "bit_ast"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-bit_common = { path = "../bit_common" }
-bit_lex = { path = "../bit_lex" }

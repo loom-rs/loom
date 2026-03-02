@@ -1,0 +1,14 @@
+[lib]
+crate-type = ["cdylib"]
+
+[package]
+name = "tick_wasm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wasm-bindgen = "0.2.108"
+tick_rt = { path = "../tick_rt" }
+tick_common = { path = "../tick_common" }
+camino = "1.2.2"
+miette = { git = "https://github.com/tick-io/miette", features = ["fancy"] }

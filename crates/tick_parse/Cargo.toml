@@ -1,0 +1,11 @@
+[package]
+name = "tick_parse"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tick_common = { path = "../tick_common" }
+tick_lex = { path = "../tick_lex" }
+tick_ast = { path = "../tick_ast" }
+miette = { git = "https://github.com/tick-io/miette", features = ["fancy"] }
+thiserror = "2.0.18"

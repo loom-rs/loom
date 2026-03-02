@@ -1,0 +1,10 @@
+[package]
+name = "tick_lex"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+camino = "1.2.2"
+miette = { git = "https://github.com/tick-io/miette", features = ["fancy"] }
+thiserror = "2.0.18"
+tick_common = { path = "../tick_common" }

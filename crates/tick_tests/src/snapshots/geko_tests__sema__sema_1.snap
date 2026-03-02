@@ -1,0 +1,14 @@
+---
+source: crates/tick_tests/src/sema.rs
+expression: result
+---
+sema::break_outside_loop
+
+  x couldn't use `break` statement outside of loop.
+   ,-[test.tick:2:9]
+ 1 | 
+ 2 |         break;
+   :         ^^|^^
+   :           `-- this `break` statement is invalid.
+ 3 |         
+   `----

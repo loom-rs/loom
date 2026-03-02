@@ -1,0 +1,14 @@
+---
+source: crates/tick_tests/src/sema.rs
+expression: result
+---
+sema::return_outside_fn
+
+  x couldn't use `return` statement outside of function.
+   ,-[test.tick:2:9]
+ 1 | 
+ 2 |         return;
+   :         ^^^|^^
+   :            `-- this `return` statement is invalid.
+ 3 |         
+   `----

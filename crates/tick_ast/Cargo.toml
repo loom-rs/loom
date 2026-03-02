@@ -1,0 +1,8 @@
+[package]
+name = "tick_ast"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tick_common = { path = "../tick_common" }
+tick_lex = { path = "../tick_lex" }

@@ -6,7 +6,7 @@ on:
     - cron: '0 3 * * *'
 
 env:
-  PROJECT_NAME: bit
+  PROJECT_NAME: tick
 
 jobs:
 
@@ -105,7 +105,7 @@ jobs:
         run: |
           cargo build --release --target x86_64-pc-windows-msvc
           mkdir release
-          copy target\x86_64-pc-windows-msvc\release\bit.exe release\bit-x86_64-pc-windows-msvc.exe
+          copy target\x86_64-pc-windows-msvc\release\tick.exe release\tick-x86_64-pc-windows-msvc.exe
 
       - name: Upload Windows binaries to release
         uses: softprops/action-gh-release@v1
@@ -140,8 +140,8 @@ jobs:
           mkdir -p release
           cargo build --release --target x86_64-apple-darwin
           cargo build --release --target aarch64-apple-darwin
-          cp target/x86_64-apple-darwin/release/bit release/bit-x86_64-apple-darwin
-          cp target/aarch64-apple-darwin/release/bit release/bit-aarch64-apple-darwin
+          cp target/x86_64-apple-darwin/release/tick release/tick-x86_64-apple-darwin
+          cp target/aarch64-apple-darwin/release/tick release/tick-aarch64-apple-darwin
 
       - name: Upload macOS binaries to release
         uses: softprops/action-gh-release@v1

@@ -1,0 +1,18 @@
+---
+source: crates/tick_tests/src/sema.rs
+expression: result
+---
+sema::break_outside_loop
+
+  x couldn't use `break` statement outside of loop.
+   ,-[test.tick:5:21]
+ 2 |         fn outer() {
+ 3 |             while true {
+ 4 |                 fn inner() {
+ 5 |                     break;
+   :                     ^^|^^
+   :                       `-- this `break` statement is invalid.
+ 6 |                 }
+ 7 |             }
+ 8 |         }
+   `----

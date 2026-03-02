@@ -1,9 +1,0 @@
-[package]
-name = "bit_common"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-miette = { git = "https://github.com/bit-rs/miette", features = ["fancy"] }
-camino = "1.2.2"
-thiserror = "2.0.18"
