@@ -102,9 +102,12 @@ pub fn args() -> Ref<Native> {
                 .borrow()
                 .lookup("List")
                 .unwrap_or_else(|| error(span, "list builtin is not found"));
+            
+            // Instantiating list instance
             match list_builtin {
                 Value::Type(list_ty) => match rt.call_type(span, Vec::new(), list_ty) {
                     Ok(val) => match val {
+                        // Setting up internal vector
                         Value::Instance(list) => {
                             list.borrow_mut().fields.insert(
                                 "$internal".to_string(),
