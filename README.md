@@ -16,7 +16,7 @@ Nightly builds are available and can be run on **stable Rust**, giving you a cha
 - [ ] `time` library
 - [ ] update `math` library
 - [x] implement `random` in `math` library
-- [ ] implement `choice` for list
+- [x] implement `choice` for list
 - [ ] `strings` library
 - [ ] `fmt` library
 - [ ] `convert` library
