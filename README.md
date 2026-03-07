@@ -22,7 +22,7 @@ Nightly builds are available and can be run on **stable Rust**, giving you a cha
 - [ ] `convert` library
 - [ ] `reflect` library
 - [x] `env` library (by `Antares64`)
-- [ ] `mem` library
+- [x] `mem` library
 - [ ] `signal` library
 - [ ] `zip` library
 - [ ] `color` library
