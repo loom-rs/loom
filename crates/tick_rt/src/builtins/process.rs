@@ -56,6 +56,7 @@ fn exit() -> Ref<Native> {
         }),
     });
 }
+
 /// Process spawn
 fn spawn() -> Ref<Native> {
     return Ref::new(Native {
@@ -242,7 +243,7 @@ fn process_output_method() -> Method {
                                         let _ = stdout.read_to_string(&mut output);
                                         output
                                     }
-                                    None => "<failed to retrieve stdout>".to_string(),
+                                    None => "<failed to retrieve `stdout`>".to_string(),
                                 };
                                 Value::String(output)
                             }
@@ -285,7 +286,7 @@ fn process_stderr_method() -> Method {
                                         let _ = stderr.read_to_string(&mut output);
                                         output
                                     }
-                                    None => "<failed to retrieve stderr>".to_string(),
+                                    None => "<failed to retrieve `stderr`>".to_string(),
                                 };
                                 Value::String(output)
                             }
@@ -335,7 +336,7 @@ fn process_write_method() -> Method {
                                             ),
                                         }
                                     }
-                                    None => utils::error(span, "failed to retrieve stderr"),
+                                    None => utils::error(span, "failed to retrieve `stdin`"),
                                 };
                                 Value::Null
                             }
@@ -351,6 +352,7 @@ fn process_write_method() -> Method {
         }),
     }))
 }
+
 /// Provides `Process` type
 fn provide_process_type() -> Ref<Type> {
     Ref::new(Type {

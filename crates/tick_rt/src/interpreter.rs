@@ -1,19 +1,15 @@
 /// Imports
 use crate::{
     builtins::{self, Builtins},
-    error::RuntimeError,
     modules::Modules,
     refs::{EnvRef, MutRef},
-    rt::{
-        env::Environment,
-        value::{Module, Value},
-    },
+    rt::{env::Environment, value::Module},
 };
 use miette::NamedSource;
 use std::{cell::RefCell, sync::Arc};
 use tick_ast::stmt::Block;
-use tick_common::{bail, io::IO};
-use tick_lex::{lexer::Lexer, token::Span};
+use tick_common::io::IO;
+use tick_lex::lexer::Lexer;
 use tick_parse::parser::Parser;
 use tick_sema::Analyzer;
 
@@ -38,19 +34,6 @@ impl<'io> Interpreter<'io> {
             env: EnvRef::new(RefCell::new(Environment::default())),
             modules: Modules::default(),
             io,
-        }
-    }
-
-    /// Is truthy helper
-    pub(crate) fn is_truthy(&self, span: &Span, value: &Value) -> bool {
-        if let Value::Bool(bool) = value {
-            bool.clone()
-        } else {
-            bail!(RuntimeError::ExpectedBool {
-                value: value.clone(),
-                src: span.0.clone(),
-                span: span.1.clone().into()
-            })
         }
     }
 
@@ -114,16 +97,6 @@ impl<'io> Interpreter<'io> {
 
     /// Loads builtin module
     pub fn load_builtin_module(&mut self, name: &str) -> Option<MutRef<Module>> {
-        // Retrieving builtin module
-        let module = self.builtins.modules.get(name).cloned();
-
-        // Registering module, if it found
-        match module {
-            Some(module) => {
-                self.modules.set(name.to_string(), module.clone());
-                Some(module)
-            }
-            None => None,
-        }
+        self.builtins.modules.get(name).cloned()
     }
 }

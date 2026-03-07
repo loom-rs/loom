@@ -281,7 +281,7 @@ impl<'io> Interpreter<'io> {
             .map(|it| {
                 (
                     it.0,
-                    // Creating bound method for earch
+                    // Creating bound method for each
                     Value::Callable(Callable::Bound(Ref::new(Bound {
                         method: it.1,
                         // Field belongs to fresh instance
@@ -299,7 +299,7 @@ impl<'io> Interpreter<'io> {
             type_of: ty.clone(),
             fields: HashMap::new(),
         }));
-        // Fields
+        // Preparing instance fields
         let fields = self.prepare_instance_fields(&instance, ty);
         // Setting new fields for instance
         instance.borrow_mut().fields = fields;
@@ -372,6 +372,8 @@ impl<'io> Interpreter<'io> {
 
         // Popping environment
         self.env = previous;
+
+        // Done!
         Ok(result)
     }
 
@@ -391,6 +393,7 @@ impl<'io> Interpreter<'io> {
             let borrow = instance.borrow();
             borrow.fields.get("init").cloned()
         } {
+            // Calling bound method, if found
             self.call_bound_method(span, args, bound)?;
         } else {
             // Either no init or not a bound method -> check arity 0
@@ -508,6 +511,19 @@ impl<'io> Interpreter<'io> {
             Expression::Call { span, args, what } => self.eval_call(span, args, what),
             Expression::List { span, list } => self.eval_list(span, list),
             Expression::Fn { params, block, .. } => self.eval_anon_fn(params, block),
+        }
+    }
+
+    /// Is truthy helper
+    pub(crate) fn is_truthy(&self, span: &Span, value: &Value) -> bool {
+        if let Value::Bool(bool) = value {
+            bool.clone()
+        } else {
+            bail!(RuntimeError::ExpectedBool {
+                value: value.clone(),
+                src: span.0.clone(),
+                span: span.1.clone().into()
+            })
         }
     }
 }
