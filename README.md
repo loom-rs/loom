@@ -30,7 +30,7 @@ Nightly builds are available and can be run on **stable Rust**, giving you a cha
 - [ ] `net/http` library
 - [ ] `net/tcp` library
 - [ ] `net/udp` library
-- [ ] `crypto` library
+- [x] `crypto` library
 - [ ] `sys` library
 - [x] `process` library
 - [x] implement anonymous functions
