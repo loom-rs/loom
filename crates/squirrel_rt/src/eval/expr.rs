@@ -178,7 +178,7 @@ impl<'io> Interpreter<'io> {
             (Value::Int(a), Value::Int(b)) => self.int_bin_op(span, a, b, op),
             (Value::Int(a), Value::Float(b)) => self.float_bin_op(span, a as f64, b, op),
             (Value::Float(a), Value::Int(b)) => self.float_bin_op(span, a, b as f64, op),
-            (Value::Float(a), Value::Float(b)) => self.float_bin_op(span, a, b as f64, op),
+            (Value::Float(a), Value::Float(b)) => self.float_bin_op(span, a, b, op),
 
             // Binary operation over bools
             (Value::Bool(a), Value::Bool(b)) => self.bool_bin_op(span, a, b, op),
@@ -565,7 +565,7 @@ impl<'io> Interpreter<'io> {
         let values = match (lhs, rhs) {
             (Value::Int(a), Value::Int(b)) => {
                 let range = if includes_end { a..b + 1 } else { a..b };
-                range.map(|num| Value::Int(num)).collect::<Vec<Value>>()
+                range.map(Value::Int).collect::<Vec<Value>>()
             }
             (lhs, rhs) => bail!(RuntimeError::InvalidRange {
                 src: span.0.clone(),

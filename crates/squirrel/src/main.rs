@@ -43,10 +43,10 @@ fn main() {
     let name = path.file_stem().unwrap_or("<unknown>");
 
     // Preparing IO
-    let mut io = CliIO;
+    let io = CliIO;
 
     // Interpreting
     let code = io.read(&path);
-    let mut interpreter = Interpreter::new(&mut io);
+    let mut interpreter = Interpreter::new(&io);
     let _ = interpreter.interpret_module(name, &code);
 }

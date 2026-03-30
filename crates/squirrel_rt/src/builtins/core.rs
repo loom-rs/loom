@@ -46,7 +46,7 @@ pub fn str_of() -> Ref<Native> {
     Ref::new(Native {
         arity: 1,
         function: Box::new(|_, _, values| {
-            Value::String(values.get(0).cloned().unwrap().to_string())
+            Value::String(values.first().cloned().unwrap().to_string())
         }),
     })
 }

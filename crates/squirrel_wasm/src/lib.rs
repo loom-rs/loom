@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 /// Runs script
 #[wasm_bindgen]
 pub fn run(code: &str) {
-    let mut io = WasmIO;
-    let mut interpreter = Interpreter::new(&mut io);
+    let io = WasmIO;
+    let mut interpreter = Interpreter::new(&io);
     interpreter.interpret_module("wasm", code);
 }
