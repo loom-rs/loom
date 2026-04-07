@@ -9,6 +9,7 @@ use std::{
     any::Any,
     collections::HashMap,
     fmt::{Debug, Display},
+    hash::{Hash, Hasher},
     rc::Rc,
 };
 
@@ -189,6 +190,64 @@ impl Debug for Value {
         write!(f, "{self}")
     }
 }
+
+/// Hash implementation
+impl Hash for Value {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hashing descriminant
+        std::mem::discriminant(self).hash(state);
+
+        // Hashing self
+        match self {
+            // Primitives hash
+            Value::Bool(v) => v.hash(state),
+            Value::Int(v) => v.hash(state),
+            Value::Float(v) => {
+                if v.is_nan() {
+                    0.hash(state);
+                } else {
+                    v.to_bits().hash(state);
+                }
+            }
+            Value::String(v) => v.hash(state),
+
+            // Reference-types hash
+            Value::Callable(c) => match c {
+                Callable::Closure(r) => {
+                    (Rc::as_ptr(r) as usize).hash(state);
+                }
+                Callable::Bound(r) => {
+                    (Rc::as_ptr(r) as usize).hash(state);
+                }
+                Callable::Native(r) => {
+                    (Rc::as_ptr(r) as usize).hash(state);
+                }
+            },
+            Value::Class(r) => {
+                (Rc::as_ptr(r) as usize).hash(state);
+            }
+            Value::Enum(r) => {
+                (Rc::as_ptr(r) as usize).hash(state);
+            }
+            Value::Trait(r) => {
+                (Rc::as_ptr(r) as usize).hash(state);
+            }
+            Value::Module(r) => {
+                (Rc::as_ptr(r) as usize).hash(state);
+            }
+            Value::Instance(r) => {
+                (Rc::as_ptr(r) as usize).hash(state);
+            }
+            Value::Any(r) => {
+                (Rc::as_ptr(r) as *const () as usize).hash(state);
+            }
+            Value::Null => {}
+        }
+    }
+}
+
+/// Eq implementation
+impl Eq for Value {}
 
 /// PartialEq implementation
 impl PartialEq for Value {

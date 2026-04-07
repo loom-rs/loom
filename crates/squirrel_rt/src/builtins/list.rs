@@ -5,7 +5,75 @@ use crate::{
     rt::value::{Class, Method, Native, Value},
 };
 use rand::RngExt;
+use squirrel_lex::token::Span;
 use std::{cell::RefCell, collections::HashMap};
+
+/// Helper: validates list
+fn validate_list<F, V>(span: &Span, list: Value, f: F) -> V
+where
+    F: FnOnce(&mut Vec<Value>) -> V,
+{
+    match list {
+        Value::Instance(instance) => {
+            // Safety: borrow is temporal for this line
+            let internal = instance
+                .borrow_mut()
+                .fields
+                .get("$internal")
+                .cloned()
+                .unwrap();
+
+            match internal {
+                Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
+                    Some(vec) => f(vec),
+                    _ => utils::error(span, "corrupted list"),
+                },
+                _ => {
+                    utils::error(span, "corrupted list");
+                }
+            }
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// Helper: validates list argument
+fn validate_list_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
+where
+    F: FnOnce(&mut Vec<Value>) -> V,
+{
+    validate_list(span, values.get(0).cloned().unwrap(), f)
+}
+
+/// Helper: validates index
+fn validate_idx<F, V>(span: &Span, idx: Value, len: usize, f: F) -> V
+where
+    F: FnOnce(usize) -> V,
+{
+    match idx {
+        Value::Int(idx) => {
+            if idx < 0 {
+                utils::error(span, "index should be positive int")
+            } else {
+                let idx = idx as usize;
+                if idx >= len {
+                    utils::error(span, "index out of bounds")
+                } else {
+                    f(idx)
+                }
+            }
+        }
+        _ => utils::error(span, "index should be an int"),
+    }
+}
+
+/// Helper: validates index argument
+fn validate_idx_arg<F, V>(span: &Span, values: &[Value], idx: usize, len: usize, f: F) -> V
+where
+    F: FnOnce(usize) -> V,
+{
+    validate_idx(span, values.get(idx).cloned().unwrap(), len, f)
+}
 
 /// Init method
 fn init_method() -> Method {
@@ -36,29 +104,7 @@ fn to_string_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 1,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => Value::String(format!("{vec:?}")),
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| Value::String(format!("{vec:?}")))
         }),
     }))
 }
@@ -68,32 +114,10 @@ fn push_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 2,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => {
-                                vec.push(values.get(1).cloned().unwrap());
-                                Value::Null
-                            }
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                vec.push(values.get(1).cloned().unwrap());
+                Value::Null
+            })
         }),
     }))
 }
@@ -103,43 +127,9 @@ fn get_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 2,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => match values.get(1).cloned().unwrap() {
-                                Value::Int(idx) => {
-                                    if idx < 0 {
-                                        utils::error(span, "index should be positive int")
-                                    } else {
-                                        let idx = idx as usize;
-                                        if idx >= vec.len() {
-                                            utils::error(span, "index out of bounds")
-                                        } else {
-                                            vec[idx].clone()
-                                        }
-                                    }
-                                }
-                                _ => utils::error(span, "index should be an int"),
-                            },
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                validate_idx_arg(span, &values, 1, vec.len(), |idx| vec[idx].clone())
+            })
         }),
     }))
 }
@@ -149,46 +139,12 @@ fn set_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 3,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => {
-                                match values.get(1).cloned().unwrap() {
-                                    Value::Int(idx) => {
-                                        if idx < 0 {
-                                            utils::error(span, "index should be positive int")
-                                        } else {
-                                            let idx = idx as usize;
-                                            if idx >= vec.len() {
-                                                utils::error(span, "index out of bounds")
-                                            } else {
-                                                vec[idx] = values.get(2).cloned().unwrap()
-                                            }
-                                        }
-                                    }
-                                    _ => utils::error(span, "index should be an int"),
-                                };
-                                Value::Null
-                            }
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                validate_idx_arg(span, &values, 1, vec.len(), |idx| {
+                    vec[idx] = values.get(2).cloned().unwrap();
+                    Value::Null
+                })
+            })
         }),
     }))
 }
@@ -198,46 +154,12 @@ fn insert_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 3,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => {
-                                match values.get(1).cloned().unwrap() {
-                                    Value::Int(idx) => {
-                                        if idx < 0 {
-                                            utils::error(span, "index should be positive int")
-                                        } else {
-                                            let idx = idx as usize;
-                                            if idx > vec.len() {
-                                                utils::error(span, "index out of bounds")
-                                            } else {
-                                                vec.insert(idx, values.get(2).cloned().unwrap())
-                                            }
-                                        }
-                                    }
-                                    _ => utils::error(span, "index should be an int"),
-                                };
-                                Value::Null
-                            }
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                validate_idx_arg(span, &values, 1, vec.len(), |idx| {
+                    vec.insert(idx, values.get(2).cloned().unwrap());
+                    Value::Null
+                })
+            })
         }),
     }))
 }
@@ -247,46 +169,12 @@ fn remove_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 2,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => {
-                                match values.get(1).cloned().unwrap() {
-                                    Value::Int(idx) => {
-                                        if idx < 0 {
-                                            utils::error(span, "index should be positive int")
-                                        } else {
-                                            let idx = idx as usize;
-                                            if idx >= vec.len() {
-                                                utils::error(span, "index out of bounds")
-                                            } else {
-                                                vec.remove(idx);
-                                            }
-                                        }
-                                    }
-                                    _ => utils::error(span, "index should be an int"),
-                                };
-                                Value::Null
-                            }
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                validate_idx_arg(span, &values, 1, vec.len(), |idx| {
+                    vec.remove(idx);
+                    Value::Null
+                })
+            })
         }),
     }))
 }
@@ -296,29 +184,7 @@ fn len_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 1,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => Value::Int(vec.len() as i64),
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| Value::Int(vec.len() as i64))
         }),
     }))
 }
@@ -328,32 +194,10 @@ fn clear_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 1,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => {
-                                vec.clear();
-                                Value::Null
-                            }
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                vec.clear();
+                Value::Null
+            })
         }),
     }))
 }
@@ -363,29 +207,7 @@ fn pop_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 1,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => vec.pop().unwrap_or(Value::Null),
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| vec.pop().unwrap_or(Value::Null))
         }),
     }))
 }
@@ -395,35 +217,13 @@ fn index_of_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 2,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => {
-                                let value = values.get(1).cloned().unwrap();
-                                vec.iter()
-                                    .position(|v| *v == value)
-                                    .map(|it| Value::Int(it as i64))
-                                    .unwrap_or(Value::Int(-1))
-                            }
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                let value = values.get(1).cloned().unwrap();
+                vec.iter()
+                    .position(|v| *v == value)
+                    .map(|it| Value::Int(it as i64))
+                    .unwrap_or(Value::Int(-1))
+            })
         }),
     }))
 }
@@ -433,29 +233,9 @@ fn contains_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 2,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => Value::Bool(vec.contains(values.get(1).unwrap())),
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
-                }
-                _ => unreachable!(),
-            }
+            validate_list_arg(span, &values, |vec| {
+                Value::Bool(vec.contains(values.get(1).unwrap()))
+            })
         }),
     }))
 }
@@ -465,40 +245,20 @@ fn choice_method() -> Method {
     Method::Native(Ref::new(Native {
         arity: 1,
         function: Box::new(|_, span, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Safety: borrow is temporal for this line
-                    let internal = instance
-                        .borrow_mut()
-                        .fields
-                        .get("$internal")
-                        .cloned()
-                        .unwrap();
-
-                    match internal {
-                        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                            Some(vec) => match vec.get(rand::rng().random_range(0..vec.len())) {
-                                Some(val) => val.clone(),
-                                _ => utils::error(
-                                    span,
-                                    "list must have 1 or more elements to perform random choice on it",
-                                ),
-                            },
-                            _ => utils::error(span, "corrupted list"),
-                        },
-                        _ => {
-                            utils::error(span, "corrupted list");
-                        }
-                    }
+            validate_list_arg(span, &values, |vec| {
+                match vec.get(rand::rng().random_range(0..vec.len())) {
+                    Some(val) => val.clone(),
+                    _ => utils::error(
+                        span,
+                        "list must have 1 or more elements to perform random choice on it",
+                    ),
                 }
-                _ => unreachable!(),
-            }
+            })
         }),
     }))
 }
 
-/// Provides list type
+/// Provides list class
 pub fn provide_class() -> Ref<Class> {
     Ref::new(Class {
         name: "List".to_string(),

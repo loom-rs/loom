@@ -1,6 +1,7 @@
 /// Modules
 mod core;
 mod crypto;
+mod dict;
 mod env;
 mod fs;
 mod is;

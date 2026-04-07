@@ -2,6 +2,7 @@
 use crate::rt::value::Value;
 
 /// Control flow
+#[derive(Debug)]
 pub enum ControlFlow {
     Continue,
     Break,

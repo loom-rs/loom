@@ -1,14 +1,13 @@
-use squirrel_common::bug;
-
 /// Imports
 use crate::{
-    builtins::{list, utils},
+    builtins::{dict, list, utils},
     refs::{EnvRef, Ref},
     rt::{
         env::Environment,
         value::{Callable, Native, Value},
     },
 };
+use squirrel_common::bug;
 use std::{cell::RefCell, rc::Rc};
 
 /// Print definition
@@ -123,6 +122,7 @@ pub fn provide_env() -> EnvRef {
     env.force_define("str_of", Value::Callable(Callable::Native(str_of())));
     env.force_define("len_of", Value::Callable(Callable::Native(len_of())));
     env.force_define("List", Value::Class(list::provide_class()));
+    env.force_define("Dict", Value::Class(dict::provide_class()));
 
     Rc::new(RefCell::new(env))
 }
