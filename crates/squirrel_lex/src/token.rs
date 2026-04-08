@@ -49,6 +49,7 @@ pub enum TokenKind {
     GtColon,     // >:
     GtBang,      // >!
     Lt,          // <
+    Colon,       // :
     Semi,        // ;
     DoubleEq,    // ==
     DoubleBar,   // ||

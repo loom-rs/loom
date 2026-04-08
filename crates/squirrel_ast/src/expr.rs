@@ -48,6 +48,11 @@ pub enum Expression {
         span: Span,
         list: Vec<Expression>,
     },
+    /// Dict expression
+    Dict {
+        span: Span,
+        dict: Vec<(Expression, Expression)>,
+    },
     /// Anonymous function expression
     Fn {
         span: Span,

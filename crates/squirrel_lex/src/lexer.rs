@@ -454,6 +454,7 @@ impl<'s> Iterator for Lexer<'s> {
             (Some(']'), _) => Some(self.advance_with(TokenKind::Rbracket, "]")),
             (Some('('), _) => Some(self.advance_with(TokenKind::Lparen, "(")),
             (Some(')'), _) => Some(self.advance_with(TokenKind::Rparen, ")")),
+            (Some(':'), _) => Some(self.advance_with(TokenKind::Colon, ":")),
             (Some(';'), _) => Some(self.advance_with(TokenKind::Semi, ";")),
             (Some('"'), _) => Some(self.advance_string()),
             (Some(ch), _) => {

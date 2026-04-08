@@ -518,10 +518,11 @@ impl<'io> Interpreter<'io> {
     /// Evaluates list expression
     fn eval_list(&mut self, span: &Span, list: &[Expression]) -> Flow<Value> {
         // Evaluating values before accessing list
-        let values = list
-            .iter()
-            .map(|expr| self.eval(expr))
-            .collect::<Flow<Vec<Value>>>()?;
+        let mut values = Vec::new();
+        for expr in list {
+            let val = self.eval(expr)?;
+            values.push(val);
+        }
 
         // Calling list constructor
         let list_value = {
@@ -550,6 +551,42 @@ impl<'io> Interpreter<'io> {
         Ok(Value::Instance(list_value))
     }
 
+    /// Evaluates dict expression
+    fn eval_dict(&mut self, span: &Span, dict: &[(Expression, Expression)]) -> Flow<Value> {
+        // Evaluating values before accessing dict
+        let mut values_map = HashMap::new();
+        for (a, b) in dict {
+            let key = self.eval(a)?;
+            let val = self.eval(b)?;
+            values_map.insert(key, val);
+        }
+
+        // Calling dict constructor
+        let dict_value = {
+            let dict_value = self
+                .builtins
+                .env
+                .borrow()
+                .lookup("Dict")
+                .unwrap_or_else(|| bug!("no builtin `Dict` found"));
+
+            match dict_value {
+                Value::Class(t) => match self.call_class(span, Vec::new(), t)? {
+                    Value::Instance(instance) => instance,
+                    _ => unreachable!(),
+                },
+                _ => bug!("builtin `Dict` is not a class"),
+            }
+        };
+
+        // Setting new map
+        dict_value.borrow_mut().fields.insert(
+            "$internal".to_string(),
+            Value::Any(MutRef::new(RefCell::new(values_map))),
+        );
+
+        Ok(Value::Instance(dict_value))
+    }
     /// Evaluates range expression
     fn eval_range(
         &mut self,
@@ -634,6 +671,7 @@ impl<'io> Interpreter<'io> {
             } => self.eval_field(span, name, container),
             Expression::Call { span, args, what } => self.eval_call(span, args, what),
             Expression::List { span, list } => self.eval_list(span, list),
+            Expression::Dict { span, dict } => self.eval_dict(span, dict),
             Expression::Range {
                 span,
                 lhs,

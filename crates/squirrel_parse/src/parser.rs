@@ -587,6 +587,32 @@ impl<'s> Parser<'s> {
         }
     }
 
+    /// Single dict pair parsing
+    fn pair(&mut self) -> (Expression, Expression) {
+        let key = self.expr();
+        self.expect(TokenKind::Colon);
+        let value = self.expr();
+
+        (key, value)
+    }
+
+    /// Dict expression parsing
+    fn dict(&mut self) -> Expression {
+        let start_span = self.peek().span.clone();
+        let dict = self.sep_by(
+            TokenKind::Lbrace,
+            TokenKind::Rbrace,
+            TokenKind::Comma,
+            |p| p.pair(),
+        );
+        let end_span = self.prev().span.clone();
+
+        Expression::Dict {
+            span: start_span + end_span,
+            dict,
+        }
+    }
+
     /// Anonymous function parsing
     fn anon_fn(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
@@ -665,6 +691,7 @@ impl<'s> Parser<'s> {
             }
             TokenKind::Id => self.variable(),
             TokenKind::Lbracket => self.list(),
+            TokenKind::Lbrace => self.dict(),
             TokenKind::Bar | TokenKind::DoubleBar => self.anon_fn(),
             _ => bail!(ParseError::UnexpectedExprToken {
                 got: tk.kind,
