@@ -19,10 +19,11 @@ Nightly builds are available and can be run on **stable Rust**, giving you a cha
 - [x] implement `choice` for list
 - [ ] `strings` library
 - [ ] `fmt` library
-- [ ] `convert` library
+- [x] `convert` library
 - [ ] `reflect` library
 - [x] `env` library (by `Antares64`)
 - [x] `mem` library
+- [ ] `unsafe` library
 - [ ] `signal` library
 - [ ] `zip` library
 - [ ] `color` library
