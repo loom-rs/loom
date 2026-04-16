@@ -12,11 +12,6 @@ println("Hello, world!");
 
 #### ✨ Examples
 ```loom
-fun ask_name() {
-  putln("👋 Hey there! What's your name?")
-  return readln()
-}
-
 fun greet(name) {
   greetings := [
     "Nice to meet you",
@@ -26,19 +21,11 @@ fun greet(name) {
   ]
 
   greeting := greetings.choice()
-  putln("🎉 " + greeting + ", " + name)
-
-  if len_of(name) < 3 {
-    putln("That's a pretty short name 😄")
-  } else if len_of(name) > 10 {
-    putln("Wow, that's a long name 😳")
-  } else {
-    putln("Cool name 👍")
-  }
+  putln(greeting + ", " + name, " 🎉!")
 }
 
-name := ask_name()
-greet(name)
+putln("👋 Hey there! What's your name?")
+greet(readln())
 ```
 
 ```loom

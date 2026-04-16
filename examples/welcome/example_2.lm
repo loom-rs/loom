@@ -1,0 +1,17 @@
+class Sandwich {
+  fun init(self, cheese, tomatoes) {
+    self.cheese := cheese
+    self.tomatoes := tomatoes
+  }
+
+  fun cook(self) {
+    putln(
+      "Sandwich is ready with "
+      + str_of(self.cheese) + " cheese, "
+      + str_of(self.tomatoes) + " tomatoes."
+    )
+  }
+}
+
+sandwich := Sandwich(3, 2)
+sandwich.cook()
