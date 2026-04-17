@@ -38,7 +38,7 @@ impl<'io> Interpreter<'io> {
     }
 
     /// Performs binary operation over floats
-    fn float_bin_op(&self, span: &Span, a: f64, b: f64, op: BinOp) -> Value {
+    fn float_bin_op(span: &Span, a: f64, b: f64, op: BinOp) -> Value {
         // Matching operator
         match op {
             BinOp::Gt => Value::Bool(a > b),
@@ -72,7 +72,7 @@ impl<'io> Interpreter<'io> {
     }
 
     /// Performs binary operation over ints
-    fn int_bin_op(&self, span: &Span, a: i64, b: i64, op: BinOp) -> Value {
+    fn int_bin_op(span: &Span, a: i64, b: i64, op: BinOp) -> Value {
         // Matching operator
         match op {
             BinOp::Gt => Value::Bool(a > b),
@@ -106,7 +106,7 @@ impl<'io> Interpreter<'io> {
     }
 
     /// Performs binary operation over bools
-    fn bool_bin_op(&self, span: &Span, a: bool, b: bool, op: BinOp) -> Value {
+    fn bool_bin_op(span: &Span, a: bool, b: bool, op: BinOp) -> Value {
         // Matching operator
         match op {
             BinOp::And => Value::Bool(a && b),
@@ -131,7 +131,7 @@ impl<'io> Interpreter<'io> {
     }
 
     /// Performs binary operation over strings
-    fn string_bin_op(&self, span: &Span, a: String, b: String, op: BinOp) -> Value {
+    fn string_bin_op(span: &Span, a: String, b: String, op: BinOp) -> Value {
         // Matching operator
         match op {
             BinOp::Ge => Value::Bool(a >= b),
@@ -171,20 +171,20 @@ impl<'io> Interpreter<'io> {
         // Matching binary operator
         match (left, right) {
             // Impls and non-impls on any values
-            (a, b) if matches!(op, BinOp::Impls) => Value::Bool(self.is_impls(span, a, b)),
-            (a, b) if matches!(op, BinOp::NotImpls) => Value::Bool(!self.is_impls(span, a, b)),
+            (a, b) if matches!(op, BinOp::Impls) => Value::Bool(Self::is_impls(span, a, b)),
+            (a, b) if matches!(op, BinOp::NotImpls) => Value::Bool(!Self::is_impls(span, a, b)),
 
             // Binary operation over numbers
-            (Value::Int(a), Value::Int(b)) => self.int_bin_op(span, a, b, op),
-            (Value::Int(a), Value::Float(b)) => self.float_bin_op(span, a as f64, b, op),
-            (Value::Float(a), Value::Int(b)) => self.float_bin_op(span, a, b as f64, op),
-            (Value::Float(a), Value::Float(b)) => self.float_bin_op(span, a, b, op),
+            (Value::Int(a), Value::Int(b)) => Self::int_bin_op(span, a, b, op),
+            (Value::Int(a), Value::Float(b)) => Self::float_bin_op(span, a as f64, b, op),
+            (Value::Float(a), Value::Int(b)) => Self::float_bin_op(span, a, b as f64, op),
+            (Value::Float(a), Value::Float(b)) => Self::float_bin_op(span, a, b, op),
 
             // Binary operation over bools
-            (Value::Bool(a), Value::Bool(b)) => self.bool_bin_op(span, a, b, op),
+            (Value::Bool(a), Value::Bool(b)) => Self::bool_bin_op(span, a, b, op),
 
             // Binary operation over strings
-            (Value::String(a), Value::String(b)) => self.string_bin_op(span, a, b, op),
+            (Value::String(a), Value::String(b)) => Self::string_bin_op(span, a, b, op),
 
             // Binary operation over any other values
             (a, b) => match op {
@@ -212,7 +212,7 @@ impl<'io> Interpreter<'io> {
     }
 
     /// Performs unary operation over values
-    pub(crate) fn perform_unary_op(&self, span: &Span, value: Value, op: UnaryOp) -> Value {
+    pub(crate) fn perform_unary_op(span: &Span, value: Value, op: UnaryOp) -> Value {
         // Invalid unary op
         let invalid_unary_op = || {
             bail!(RuntimeError::InvalidUnaryOp {
@@ -252,7 +252,7 @@ impl<'io> Interpreter<'io> {
         let value = self.eval(value)?;
 
         // Performing unary op
-        Ok(self.perform_unary_op(span, value, op))
+        Ok(Self::perform_unary_op(span, value, op))
     }
 
     /// Evaluates variable expression
@@ -706,7 +706,7 @@ impl<'io> Interpreter<'io> {
     }
 
     /// Is impls helper
-    pub(crate) fn is_impls(&self, span: &Span, val: Value, trt: Value) -> bool {
+    pub(crate) fn is_impls(span: &Span, val: Value, trt: Value) -> bool {
         match (val, trt) {
             (Value::Instance(a), Value::Trait(b)) => {
                 // Iterating over trait functions
