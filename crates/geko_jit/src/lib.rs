@@ -26,7 +26,7 @@ pub enum Error {
     /// Could not generate code for function
     NoJitEligible,
 
-    /// No jit code generated currently
+    /// No jit code generated yet
     NoJitCode,
 
     /// Host machine is not supported

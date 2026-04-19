@@ -245,6 +245,7 @@ impl<'s> Parser<'s> {
     fn assignment_stmt(&mut self) -> Statement {
         let start_span = self.peek().span.clone();
         let variable = self.variable();
+
         // Checking for ssignment operator
         let op = match self.current.clone().map(|it| it.kind) {
             Some(TokenKind::PlusEq) => Some(AssignOp::Add),
@@ -260,6 +261,7 @@ impl<'s> Parser<'s> {
             Some(_) => None,
             _ => return Statement::Expr(variable),
         };
+
         // Checking assignment operator existence
         match op {
             // If operator found
@@ -331,10 +333,12 @@ impl<'s> Parser<'s> {
     fn use_path(&mut self) -> String {
         let mut path = String::new();
         path.push_str(&self.expect(TokenKind::Id).lexeme);
+
         while self.check(TokenKind::Slash) {
             self.bump();
             path.push_str(&self.expect(TokenKind::Id).lexeme);
         }
+
         path
     }
 
@@ -710,6 +714,7 @@ impl<'s> Parser<'s> {
     fn factor_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.unary_expr();
+
         while self.check(TokenKind::Star)
             || self.check(TokenKind::Slash)
             || self.check(TokenKind::Percent)
@@ -729,6 +734,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -736,6 +742,7 @@ impl<'s> Parser<'s> {
     fn term_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.factor_expr();
+
         while self.check(TokenKind::Plus) || self.check(TokenKind::Minus) {
             let op = self.bump();
             let right = self.factor_expr();
@@ -751,6 +758,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -758,6 +766,7 @@ impl<'s> Parser<'s> {
     fn range_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.term_expr();
+
         if self.check(TokenKind::DoubleDot) {
             let includes_end = {
                 self.bump();
@@ -777,6 +786,7 @@ impl<'s> Parser<'s> {
                 includes_end,
             }
         }
+
         left
     }
 
@@ -784,6 +794,7 @@ impl<'s> Parser<'s> {
     fn impls_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.range_expr();
+
         while self.check(TokenKind::GtColon) | self.check(TokenKind::GtBang) {
             let op = self.bump();
             let right = self.range_expr();
@@ -799,6 +810,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -806,6 +818,7 @@ impl<'s> Parser<'s> {
     fn compare_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.impls_expr();
+
         while self.check(TokenKind::Ge)
             || self.check(TokenKind::Gt)
             || self.check(TokenKind::Le)
@@ -827,6 +840,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -834,6 +848,7 @@ impl<'s> Parser<'s> {
     fn equality_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.compare_expr();
+
         while self.check(TokenKind::DoubleEq) || self.check(TokenKind::BangEq) {
             let op = self.bump();
             let right = self.compare_expr();
@@ -849,6 +864,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -856,6 +872,7 @@ impl<'s> Parser<'s> {
     fn bitwise_and_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.equality_expr();
+
         while self.check(TokenKind::Ampersand) {
             self.bump();
             let right = self.equality_expr();
@@ -867,6 +884,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -874,6 +892,7 @@ impl<'s> Parser<'s> {
     fn bitwise_xor_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.bitwise_and_expr();
+
         while self.check(TokenKind::Caret) {
             self.bump();
             let right = self.bitwise_and_expr();
@@ -885,6 +904,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             };
         }
+
         left
     }
 
@@ -892,6 +912,7 @@ impl<'s> Parser<'s> {
     fn bitwise_or_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.bitwise_xor_expr();
+
         while self.check(TokenKind::Bar) {
             self.bump();
             let right = self.bitwise_xor_expr();
@@ -903,6 +924,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -910,6 +932,7 @@ impl<'s> Parser<'s> {
     fn logical_and_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.bitwise_or_expr();
+
         while self.check(TokenKind::DoubleAmp) {
             self.bump();
             let right = self.bitwise_or_expr();
@@ -921,6 +944,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
@@ -928,6 +952,7 @@ impl<'s> Parser<'s> {
     fn logical_or_expr(&mut self) -> Expression {
         let start_span = self.peek().span.clone();
         let mut left = self.logical_and_expr();
+
         while self.check(TokenKind::DoubleBar) {
             self.bump();
             let right = self.logical_and_expr();
@@ -939,6 +964,7 @@ impl<'s> Parser<'s> {
                 rhs: Box::new(right),
             }
         }
+
         left
     }
 
