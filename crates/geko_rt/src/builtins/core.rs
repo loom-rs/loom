@@ -6,11 +6,10 @@ use crate::{
         utils,
     },
     errors::RuntimeError,
-    interpreter::Interpreter,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
-        value::{Callable, Class, Native, Value},
+        value::{Callable, Native, Value},
     },
 };
 use geko_common::{bail, bug};
@@ -63,7 +62,7 @@ pub fn ok() -> Ref<Native> {
     Ref::new(Native {
         arity: 1,
         function: Box::new(|rt, span, values| {
-            let value = values.get(0).cloned().unwrap();
+            let value = values.first().cloned().unwrap();
             Value::Instance(make_result(rt, span, value, true))
         }),
     })
@@ -74,7 +73,7 @@ pub fn error() -> Ref<Native> {
     Ref::new(Native {
         arity: 1,
         function: Box::new(|rt, span, values| {
-            let value = values.get(0).cloned().unwrap();
+            let value = values.first().cloned().unwrap();
             Value::Instance(make_result(rt, span, value, false))
         }),
     })
@@ -85,7 +84,7 @@ pub fn bail() -> Ref<Native> {
     Ref::new(Native {
         arity: 1,
         function: Box::new(|_, span, values| {
-            let text = values.get(0).cloned().unwrap();
+            let text = values.first().cloned().unwrap();
             bail!(RuntimeError::Bail {
                 text: format!("{text}"),
                 src: span.0.clone(),
@@ -101,7 +100,7 @@ pub fn todo() -> Ref<Native> {
         arity: 0,
         function: Box::new(|_, span, _| {
             bail!(RuntimeError::Bail {
-                text: format!("found todo"),
+                text: "found todo".to_string(),
                 src: span.0.clone(),
                 span: span.1.clone().into()
             })

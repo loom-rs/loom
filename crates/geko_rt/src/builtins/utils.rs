@@ -1,10 +1,5 @@
 /// Imports
-use crate::{
-    errors::RuntimeError,
-    interpreter::Interpreter,
-    refs::Ref,
-    rt::value::{Callable, Class, Value},
-};
+use crate::{errors::RuntimeError, interpreter::Interpreter, rt::value::Value};
 use geko_common::{bail, bug};
 use geko_lex::token::Span;
 

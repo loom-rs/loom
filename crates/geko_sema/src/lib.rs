@@ -67,7 +67,7 @@ impl Analyzer {
             // Analyzing class methods
             Statement::Class(class) => {
                 for method in &class.methods {
-                    self.analyze_function(&method);
+                    self.analyze_function(method);
                 }
             }
             // Analyzing function

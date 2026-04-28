@@ -69,7 +69,7 @@ impl<'ctx> FunctionContext<'ctx> {
             .entry(name.into())
             .or_insert_with(|| Variable {
                 variable: self.builder.declare_var(CodeGenerator::map_type(typ)),
-                typ: typ.clone(),
+                typ: *typ,
             })
     }
 
@@ -266,7 +266,7 @@ impl<'ctx> FunctionContext<'ctx> {
     // Translates block into Cranelift IR
     fn translate_block(&mut self, block: &Block) -> Result<(), Error> {
         for stmt in &block.statements {
-            self.translate_stmt(&stmt)?;
+            self.translate_stmt(stmt)?;
         }
         Ok(())
     }
@@ -605,7 +605,7 @@ impl<'ctx> FunctionContext<'ctx> {
         match what {
             // Todo: replace with `if let` guard in `rust 1.95`
             Expression::Variable { name, .. }
-                if self.lookup_var(name).is_none() && &self.signature.name == name.as_str() =>
+                if self.lookup_var(name).is_none() && self.signature.name == name.as_str() =>
             {
                 // Preparing function arguments
                 let args: Vec<_> = args
@@ -756,7 +756,7 @@ impl CodeGenerator {
             variables: HashMap::new(),
             loops: Vec::new(),
             signature: sig.clone(),
-            rec_ref: rec_ref,
+            rec_ref,
         };
 
         // Preparing entry block

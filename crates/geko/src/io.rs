@@ -36,7 +36,7 @@ impl IO for CliIO {
     /// Write implementation
     fn write(&self, path: &Utf8PathBuf, text: String) {
         // Writing to file
-        if let Err(_) = fs::write(path, text) {
+        if fs::write(path, text).is_err() {
             bail!(IOError::FileNotFound(path.clone()))
         }
     }
