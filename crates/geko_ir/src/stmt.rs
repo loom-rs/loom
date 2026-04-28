@@ -83,11 +83,6 @@ pub enum Statement {
         path: String,
         kind: UseKind,
     },
-    // Bail statement
-    Bail {
-        span: Span,
-        message: Expression,
-    },
 }
 
 /// Represents block

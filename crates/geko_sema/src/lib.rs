@@ -118,8 +118,6 @@ impl Analyzer {
             },
             // Analyzing expr statement
             Statement::Expr(expr) => self.analyze_expr(expr),
-            // Analyzing bailure message
-            Statement::Bail { message, .. } => self.analyze_expr(message),
             // Skipping use, enum, trait statements
             Statement::Use { .. } |
             Statement::Enum(_) |

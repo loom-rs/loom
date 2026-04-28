@@ -1,1 +1,1 @@
-bail "bail occurred!"
+bail("bail occurred!")

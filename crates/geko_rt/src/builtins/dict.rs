@@ -49,15 +49,12 @@ where
 /// Helper: makes new dict
 #[allow(dead_code)]
 pub fn make_dict(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
-    let dict_value = rt
-        .builtins
-        .env
-        .borrow()
-        .lookup("Dict")
-        .unwrap_or_else(|| bug!("no builtin `Dict` found"));
+    // Getting builtin class
+    let class = utils::get_builtin(rt, "Dict");
 
-    match dict_value {
-        Value::Class(t) => match rt.call_class(span, Vec::new(), t) {
+    // Calling class
+    match class {
+        Value::Class(class) => match rt.call_class(span, Vec::new(), class) {
             Ok(Value::Instance(instance)) => instance,
             Ok(_) => unreachable!(),
             Err(err) => {
@@ -66,7 +63,7 @@ pub fn make_dict(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
                 ))
             }
         },
-        _ => bug!("builtin `Dict` is not a class"),
+        _ => bug!(format!("builtin `Dict` is not a class")),
     }
 }
 

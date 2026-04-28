@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    error::RuntimeError,
+    errors::RuntimeError,
     interpreter::Interpreter,
     refs::{MutRef, RealmRef, Ref},
     rt::{

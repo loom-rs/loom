@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    error::RuntimeError,
+    errors::RuntimeError,
     interpreter::Interpreter,
     refs::{RealmRef, Ref},
     rt::{
@@ -488,16 +488,6 @@ impl<'io> Interpreter<'io> {
         Ok(())
     }
 
-    /// Executes bail
-    fn exec_bail(&mut self, span: &Span, message: &Expression) -> Flow<()> {
-        let text = self.eval(message)?;
-        bail!(RuntimeError::Bail {
-            text: format!("{text}"),
-            src: span.0.clone(),
-            span: span.1.clone().into()
-        })
-    }
-
     /// Executes statement
     pub fn exec(&mut self, stmt: &Statement) -> Flow<()> {
         // Matching statement
@@ -539,7 +529,6 @@ impl<'io> Interpreter<'io> {
             }
             Statement::Block(block) => self.exec_block(block, true),
             Statement::Use { span, path, kind } => self.exec_use(span, path, kind),
-            Statement::Bail { span, message } => self.exec_bail(span, message),
             Statement::For {
                 span,
                 var,

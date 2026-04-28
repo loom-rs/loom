@@ -5,14 +5,16 @@ use crate::{
         result::{self, make_result},
         utils,
     },
+    errors::RuntimeError,
+    interpreter::Interpreter,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
-        value::{Callable, Native, Value},
+        value::{Callable, Class, Native, Value},
     },
 };
-use geko_common::bug;
-use std::{cell::RefCell, rc::Rc};
+use geko_common::{bail, bug};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 /// Put definition
 pub fn put() -> Ref<Native> {
@@ -78,6 +80,35 @@ pub fn error() -> Ref<Native> {
     })
 }
 
+/// Bail definition
+pub fn bail() -> Ref<Native> {
+    Ref::new(Native {
+        arity: 1,
+        function: Box::new(|_, span, values| {
+            let text = values.get(0).cloned().unwrap();
+            bail!(RuntimeError::Bail {
+                text: format!("{text}"),
+                src: span.0.clone(),
+                span: span.1.clone().into()
+            })
+        }),
+    })
+}
+
+/// Todo definition
+pub fn todo() -> Ref<Native> {
+    Ref::new(Native {
+        arity: 0,
+        function: Box::new(|_, span, _| {
+            bail!(RuntimeError::Bail {
+                text: format!("found todo"),
+                src: span.0.clone(),
+                span: span.1.clone().into()
+            })
+        }),
+    })
+}
+
 /// Length of string or list
 pub fn len_of() -> Ref<Native> {
     Ref::new(Native {
@@ -90,18 +121,15 @@ pub fn len_of() -> Ref<Native> {
                 // If instance, checking of which class this instance is
                 Value::Instance(instance) => {
                     // Retrieving list class
-                    let list_class = {
-                        let list_value = rt
-                            .builtins
-                            .env
-                            .borrow()
-                            .lookup("List")
-                            .unwrap_or_else(|| bug!("no builtin `List` found"));
+                    let list_class = match utils::get_builtin(rt, "List") {
+                        Value::Class(t) => t,
+                        _ => bug!("builtin `List` is not a class"),
+                    };
 
-                        match list_value {
-                            Value::Class(t) => t,
-                            _ => bug!("builtin `List` is not a class"),
-                        }
+                    // Retrieving dict class
+                    let dict_class = match utils::get_builtin(rt, "Dict") {
+                        Value::Class(t) => t,
+                        _ => bug!("builtin `List` is not a class"),
                     };
 
                     // Checking instance is list
@@ -123,6 +151,27 @@ pub fn len_of() -> Ref<Native> {
                                 }
                             }
                             _ => utils::error(span, "couldn't get len of corrupted list"),
+                        }
+                    }
+                    // Checking instance is dict
+                    else if Rc::ptr_eq(&instance.borrow_mut().type_of, &dict_class) {
+                        // If instance is list, retrieving len of it's internal vector
+                        // Safety: borrow is temporal for this line
+                        let internal = instance
+                            .borrow_mut()
+                            .fields
+                            .get("$internal")
+                            .cloned()
+                            .unwrap();
+
+                        match internal {
+                            Value::Any(list) => {
+                                match list.borrow_mut().downcast_mut::<HashMap<Value, Value>>() {
+                                    Some(map) => Value::Int(map.len() as i64),
+                                    _ => utils::error(span, "couldn't get len of corrupted dict"),
+                                }
+                            }
+                            _ => utils::error(span, "couldn't get len of corrupted dict"),
                         }
                     } else {
                         utils::error(
@@ -149,6 +198,8 @@ pub fn provide_env() -> RealmRef {
     realm.define("len_of", Value::Callable(Callable::Native(len_of())));
     realm.define("ok", Value::Callable(Callable::Native(ok())));
     realm.define("error", Value::Callable(Callable::Native(error())));
+    realm.define("bail", Value::Callable(Callable::Native(bail())));
+    realm.define("todo", Value::Callable(Callable::Native(todo())));
     realm.define("List", Value::Class(list::provide_class()));
     realm.define("Dict", Value::Class(dict::provide_class()));
     realm.define("Result", Value::Class(result::provide_class()));

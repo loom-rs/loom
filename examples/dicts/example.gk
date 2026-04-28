@@ -1,3 +1,4 @@
 dict := { 1: 2, true: false, "hello": "world" }
 dict.insert(2, 3)
 putln(dict.to_string())
+putln(len_of(dict))

@@ -297,7 +297,6 @@ impl<'s> Lexer<'s> {
             "true" => TokenKind::Bool,
             "false" => TokenKind::Bool,
             "fun" => TokenKind::Fun,
-            "bail" => TokenKind::Bail,
             "null" => TokenKind::Null,
             "trait" => TokenKind::Trait,
             _ => TokenKind::Id,

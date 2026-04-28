@@ -1,5 +1,5 @@
 /// Imports
-use crate::{error::RuntimeError, refs::RealmRef, rt::value::Value};
+use crate::{errors::RuntimeError, refs::RealmRef, rt::value::Value};
 use geko_common::bail;
 use geko_lex::token::Span;
 use std::collections::HashMap;

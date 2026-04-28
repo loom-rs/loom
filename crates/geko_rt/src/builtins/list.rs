@@ -79,15 +79,13 @@ where
 
 /// Helper: makes new list
 pub fn make_list(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
-    let list_value = rt
-        .builtins
-        .env
-        .borrow()
-        .lookup("List")
-        .unwrap_or_else(|| bug!("no builtin `List` found"));
+    // Getting builtin class
+    let class = utils::get_builtin(rt, "List");
 
-    match list_value {
-        Value::Class(t) => match rt.call_class(span, Vec::new(), t) {
+    // Matching list value
+    match class {
+        // Calling class
+        Value::Class(class) => match rt.call_class(span, Vec::new(), class) {
             Ok(Value::Instance(instance)) => instance,
             Ok(_) => unreachable!(),
             Err(err) => {
@@ -96,7 +94,7 @@ pub fn make_list(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
                 ))
             }
         },
-        _ => bug!("builtin `List` is not a class"),
+        _ => bug!(format!("builtin `List` is not a class")),
     }
 }
 

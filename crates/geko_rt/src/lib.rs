@@ -1,6 +1,6 @@
 mod builtins;
 #[allow(unused_assignments)]
-mod error;
+mod errors;
 mod eval;
 pub mod interpreter;
 mod modules;

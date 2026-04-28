@@ -390,7 +390,6 @@ impl<'ctx> FunctionContext<'ctx> {
             | Statement::Trait { .. }
             | Statement::Use { .. }
             | Statement::Function(_)
-            | Statement::Bail { .. }
             | Statement::Set { .. } => Err(Error::NoJitEligible),
         }
     }

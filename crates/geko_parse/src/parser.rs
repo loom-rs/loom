@@ -381,19 +381,6 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Bail statement
-    fn bail_stmt(&mut self) -> Statement {
-        let start_span = self.peek().span.clone();
-        self.expect(TokenKind::Bail);
-        let message = self.expr();
-        let end_span = self.prev().span.clone();
-
-        Statement::Bail {
-            span: start_span + end_span,
-            message,
-        }
-    }
-
     /// Satement parsing
     fn stmt(&mut self) -> Statement {
         match self.peek().kind {
@@ -409,7 +396,6 @@ impl<'s> Parser<'s> {
             TokenKind::Break => self.break_stmt(),
             TokenKind::Id => self.assignment_stmt(),
             TokenKind::Use => self.use_stmt(),
-            TokenKind::Bail => self.bail_stmt(),
             _ => Statement::Expr(self.expr()),
         }
     }
