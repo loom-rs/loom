@@ -1,10 +1,12 @@
 /// Imports
 use crate::{
+    builtin_class,
     builtins::utils,
-    refs::{RealmRef, MutRef, Ref},
+    callable, native_fun, realm,
+    refs::{MutRef, RealmRef, Ref},
     rt::{
         realm::Realm,
-        value::{Callable, Native, Value},
+        value::{Native, Value},
     },
 };
 use camino::Utf8PathBuf;
@@ -13,7 +15,6 @@ use geko_lex::token::Span;
 use std::{
     cell::RefCell,
     fs::{self, File},
-    rc::Rc,
 };
 
 /// Helper: validates path
@@ -55,9 +56,9 @@ where
 
 /// Is path exists?
 fn is_exists() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("exists"))
@@ -65,15 +66,15 @@ fn is_exists() -> Ref<Native> {
                     Value::Bool(path.exists())
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Is path a directory?
 fn is_dir() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("is_dir"))
@@ -81,15 +82,15 @@ fn is_dir() -> Ref<Native> {
                     Value::Bool(path.is_dir())
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Is path a file?
 fn is_file() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("is_file"))
@@ -97,43 +98,43 @@ fn is_file() -> Ref<Native> {
                     Value::Bool(path.is_file())
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Returns file name
 fn file_name() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 path.file_name()
                     .map(|it| Value::String(it.to_string()))
                     .unwrap_or(Value::Null)
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Returns file stem
 fn file_stem() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 path.file_stem()
                     .map(|it| Value::String(it.to_string()))
                     .unwrap_or(Value::Null)
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Get file extension
 fn file_extension() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 2,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 2,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 Value::String(
                     path.extension()
@@ -141,14 +142,15 @@ fn file_extension() -> Ref<Native> {
                         .unwrap_or(String::new()),
                 )
             })
-        }),
-    })
+        }
+    }
 }
+
 /// Make directory
 fn mk_dir() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("mk_dir"))
@@ -161,15 +163,15 @@ fn mk_dir() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Make directory and it's parents
 fn mk_dir_all() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("mk_dir_all"))
@@ -182,15 +184,15 @@ fn mk_dir_all() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Make file
 fn mk_file() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("mk_file"))
@@ -201,15 +203,15 @@ fn mk_file() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Remove empty directory
 fn rm_dir() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("rm_dir"))
@@ -222,15 +224,15 @@ fn rm_dir() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Remove directory and it's contents
 fn rm_dir_all() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("rm_dir_all"))
@@ -243,15 +245,15 @@ fn rm_dir_all() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Remove file
 fn rm_file() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("rm_file"))
@@ -262,19 +264,20 @@ fn rm_file() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Files list
 fn read_dir() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|rt, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |rt, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("read_dir"))
                 } else {
+                    // Retrieving contents
                     let contents = match fs::read_dir(path) {
                         Ok(entries) => entries
                             .map(|entry| match entry {
@@ -289,37 +292,31 @@ fn read_dir() -> Ref<Native> {
                         }
                     };
 
-                    let list_builtin = rt
-                        .builtins
-                        .env
-                        .borrow()
-                        .lookup("List")
-                        .unwrap_or_else(|| utils::error(span, "list builtin is not found"));
+                    // Retrieving list class
+                    let class = builtin_class!(rt, "List");
 
-                    match list_builtin {
-                        Value::Class(list_ty) => match rt.call_class(span, Vec::new(), list_ty) {
-                            Ok(Value::Instance(list)) => {
-                                list.borrow_mut().fields.insert(
-                                    "$internal".to_string(),
-                                    Value::Any(MutRef::new(RefCell::new(contents))),
-                                );
-                                Value::Instance(list)
-                            }
-                            _ => bug!("invalid list instantiation"),
-                        },
-                        _ => utils::error(span, "list builtin is not a class"),
+                    // Calling class
+                    match rt.call_class(span, Vec::new(), class) {
+                        Ok(Value::Instance(list)) => {
+                            list.borrow_mut().fields.insert(
+                                "$internal".to_string(),
+                                Value::Any(MutRef::new(RefCell::new(contents))),
+                            );
+                            Value::Instance(list)
+                        }
+                        _ => bug!("invalid list instantiation"),
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Copy file
 fn copy() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 2,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 2,
+        fun = |_, span, values| {
             validate_two_path_args(span, &values, |from, to| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("copy"))
@@ -330,15 +327,15 @@ fn copy() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Rename file
 fn rename() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 2,
-        function: Box::new(|_, span, values| {
+    native_fun! {
+        arity = 2,
+        fun = |_, span, values| {
             validate_two_path_args(span, &values, |from, to| {
                 if cfg!(target_family = "wasm") {
                     bail!(IOError::NotSupported("rename"))
@@ -349,25 +346,25 @@ fn rename() -> Ref<Native> {
                     }
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Read file text
 fn read() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 1,
-        function: Box::new(|rt, span, values| {
+    native_fun! {
+        arity = 1,
+        fun = |rt, span, values| {
             validate_one_path_arg(span, &values, |path| Value::String(rt.io.read(&path)))
-        }),
-    })
+        }
+    }
 }
 
 /// Write text to file
 fn write() -> Ref<Native> {
-    Ref::new(Native {
-        arity: 2,
-        function: Box::new(|rt, span, values| {
+    native_fun! {
+        arity = 2,
+        fun = |rt, span, values| {
             validate_one_path_arg(span, &values, |path| {
                 match values.get(1).cloned().unwrap() {
                     Value::String(text) => {
@@ -377,40 +374,29 @@ fn write() -> Ref<Native> {
                     other => utils::error(span, &format!("`{other}` is not valid content")),
                 }
             })
-        }),
-    })
+        }
+    }
 }
 
 /// Provides `fs` module env
 pub fn provide_env() -> RealmRef {
-    let mut env = Realm::default();
-
-    env.define("read", Value::Callable(Callable::Native(read())));
-    env.define("write", Value::Callable(Callable::Native(write())));
-    env.define("is_exists", Value::Callable(Callable::Native(is_exists())));
-    env.define("is_dir", Value::Callable(Callable::Native(is_dir())));
-    env.define("is_file", Value::Callable(Callable::Native(is_file())));
-    env.define("file_name", Value::Callable(Callable::Native(file_name())));
-    env.define("file_stem", Value::Callable(Callable::Native(file_stem())));
-    env.define(
-        "file_extension",
-        Value::Callable(Callable::Native(file_extension())),
-    );
-    env.define("mk_file", Value::Callable(Callable::Native(mk_file())));
-    env.define("mk_dir", Value::Callable(Callable::Native(mk_dir())));
-    env.define(
-        "mk_dir_all",
-        Value::Callable(Callable::Native(mk_dir_all())),
-    );
-    env.define("rm_file", Value::Callable(Callable::Native(rm_file())));
-    env.define("rm_dir", Value::Callable(Callable::Native(rm_dir())));
-    env.define(
-        "rm_dir_all",
-        Value::Callable(Callable::Native(rm_dir_all())),
-    );
-    env.define("read_dir", Value::Callable(Callable::Native(read_dir())));
-    env.define("copy", Value::Callable(Callable::Native(copy())));
-    env.define("rename", Value::Callable(Callable::Native(rename())));
-
-    Rc::new(RefCell::new(env))
+    realm! {
+        is_exists => callable!(is_exists()),
+        is_dir => callable!(is_dir()),
+        is_file => callable!(is_file()),
+        file_name => callable!(file_name()),
+        file_stem => callable!(file_stem()),
+        file_extension => callable!(file_extension()),
+        mk_dir => callable!(mk_dir()),
+        mk_dir_all => callable!(mk_dir_all()),
+        mk_file => callable!(mk_file()),
+        rm_dir => callable!(rm_dir()),
+        rm_dir_all => callable!(rm_dir_all()),
+        rm_file => callable!(rm_file()),
+        read_dir => callable!(read_dir()),
+        copy => callable!(copy()),
+        rename => callable!(rename()),
+        read => callable!(read()),
+        write => callable!(write())
+    }
 }
