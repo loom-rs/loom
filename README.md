@@ -74,6 +74,7 @@ sandwich.cook()
 - [x] `crypto` library
 - [ ] `sys` library
 - [x] `process` library
+- [ ] `iter` library
 - [ ] use `lasso` for string interning
 - [x] rework anonymous functions syntax
 - [ ] implement `shuffle` for list
