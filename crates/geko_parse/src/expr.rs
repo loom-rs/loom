@@ -1,5 +1,5 @@
 /// Imports
-use crate::{errors::ParseError, parser::Parser};
+use crate::{Parser, errors::ParseError};
 use geko_common::bail;
 use geko_ir::{
     atom::{BinOp, Lit, UnaryOp},

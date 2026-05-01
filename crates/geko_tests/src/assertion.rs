@@ -51,7 +51,7 @@ macro_rules! assert_ast {
             $crate::assertion::prepare_miette();
             let src = std::sync::Arc::new(miette::NamedSource::new("test.ql", $text.to_string()));
             let lexer = geko_lex::lexer::Lexer::new(src.clone(), $text);
-            let mut parser = geko_parse::parser::Parser::new(src, lexer);
+            let mut parser = geko_parse::Parser::new(src, lexer);
             let ast = parser.parse();
             format!("{:#?}", ast)
         }) {
@@ -112,10 +112,9 @@ macro_rules! assert_sema {
     ($text:expr) => {{
         let result = match std::panic::catch_unwind(|| {
             $crate::assertion::prepare_miette();
-            let src =
-                std::sync::Arc::new(miette::NamedSource::new("test.geko", $text.to_string()));
+            let src = std::sync::Arc::new(miette::NamedSource::new("test.geko", $text.to_string()));
             let lexer = geko_lex::lexer::Lexer::new(src.clone(), $text);
-            let mut parser = geko_parse::parser::Parser::new(src, lexer);
+            let mut parser = geko_parse::Parser::new(src, lexer);
             let ast = parser.parse();
             let mut analyzer = geko_sema::Analyzer::default();
             analyzer.analyze_module(&ast);
