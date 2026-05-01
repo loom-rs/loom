@@ -171,6 +171,7 @@ macro_rules! modules {
         ])
     }};
 }
+
 /// Callable macros
 #[macro_export]
 macro_rules! callable {
