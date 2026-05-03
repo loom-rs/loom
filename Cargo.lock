@@ -615,6 +615,7 @@ dependencies = [
  "sha2",
  "sysinfo",
  "thiserror",
+ "titlecase",
 ]
 
 [[package]]
@@ -1312,6 +1313,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "titlecase"
+version = "3.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb567088a91d59b492520c8149e2be5ce10d5deb2d9a383f3378df3259679d40"
+dependencies = [
+ "regex",
 ]
 
 [[package]]

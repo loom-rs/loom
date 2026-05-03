@@ -1,0 +1,42 @@
+use strings
+
+str := "  Hello Alice. Nice to see you!   "
+str = strings.trim(str)
+
+putln(str)
+
+putln(strings.contains(str, "Alice"))
+putln(strings.contains_prefix(str, "Hel"))
+putln(strings.contains_suffix(str, "!"))
+
+putln(strings.contains_suffix(str, "dfdsfdasfdasf")) # false
+
+putln(strings.count(str, "e"))
+
+putln(strings.is_ascii(str))
+putln(strings.is_ascii("도서관")) # false
+
+putln(strings.to_lowercase(str))
+putln(strings.to_uppercase(str))
+putln(strings.to_titlecase(str))
+
+putln(strings.repeat("a", 5))
+
+putln(strings.replace(str, "Alice", "Bob"))
+putln(strings.replace(str, "e", "@"))
+putln(strings.replacen(str, "e", "@", 1))
+
+putln(strings.split(str, ".").to_string())
+putln(strings.split_at(str, 5).to_string())
+
+putln(strings.compare(str, str))
+
+if strings.contains(str, "Alice") {
+  str = strings.replace(str, "Alice", "Kate")
+}
+
+if strings.contains_prefix(str, "Hello") {
+  str = strings.replace(str, "Hello", "Hi")
+}
+
+putln(str)
