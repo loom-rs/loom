@@ -1,8 +1,7 @@
 /// Modules
 pub mod io;
 
-/// Prints error, and then
-/// exits proccess using `std::process::exit(1)`.
+/// Panics with an error
 #[macro_export]
 macro_rules! bail {
     ($report:expr) => {{
@@ -11,8 +10,7 @@ macro_rules! bail {
     }};
 }
 
-/// Prints bug error, and then
-/// exits proccess using `std::process::exit(1)`.
+/// Panic with a bug error
 #[macro_export]
 macro_rules! bug {
     ($text:expr) => {{
