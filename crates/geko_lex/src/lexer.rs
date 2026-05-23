@@ -65,9 +65,8 @@ impl<'s> Lexer<'s> {
 
     /// Scans unicode codepoint.
     fn scan_unicode_codepoint(&mut self, small: bool) -> char {
-        // Bumping `u`
-        let start_location = self.idx;
-        self.advance();
+        // Start location
+        let start_location = self.idx - 1;
 
         // Calculating amount of hex digits
         let hex_digits_amount = if small { 4 } else { 8 };
@@ -126,9 +125,8 @@ impl<'s> Lexer<'s> {
 
     /// Scans byte codepoint.
     fn scan_byte_codepoint(&mut self) -> char {
-        // Bumping `x`
-        let start_location = self.idx;
-        self.advance();
+        // Start location
+        let start_location = self.idx - 1;
 
         if self.current != Some('{') {
             bail!(LexError::InvalidEscapeSequence {
@@ -186,8 +184,10 @@ impl<'s> Lexer<'s> {
     fn advance_escape_sequence(&mut self) -> char {
         // `\` char
         self.advance();
-        // Reading next character.
+        // Reading next char
         let ch = self.current;
+        // Advancing char
+        self.advance();
         // Checking character kind.
         match ch {
             Some('n') => '\n',
