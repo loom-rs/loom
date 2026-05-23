@@ -1,7 +1,7 @@
 /// Imports
 use crate::{
-    builtins::utils,
-    callable, class, native_class, native_fun, native_method, realm,
+    arg, arg_ref, callable, class, error, expect, expect_as, native_class, native_fun,
+    native_method, realm,
     refs::{MutRef, RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -24,16 +24,13 @@ fn sleep() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match values.first().unwrap() {
-                Value::Int(time) => {
-                    if *time >= 0 {
-                        thread::sleep(Duration::from_millis(*time as u64));
-                        Value::Null
-                    } else {
-                        utils::error(span, "time expected to be >= 0")
-                    }
-                }
-                _ => utils::error(span, "time expected to be an int"),
+            let time = expect!(span, arg!(values, 0), Value::Int);
+
+            if time >= 0 {
+                thread::sleep(Duration::from_millis(time as u64));
+                Value::Null
+            } else {
+                error!(span, "time expected to be a positive int")
             }
         }
     }
@@ -44,19 +41,16 @@ fn exit() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match values.first().unwrap() {
-                Value::Int(code) => {
-                    if *code >= 0 {
-                        if *code <= i32::MAX as i64 {
-                            process::exit(*code as i32)
-                        } else {
-                            utils::error(span, "exit code is too large")
-                        }
-                    } else {
-                        utils::error(span, "exit code expected to be >= 0")
-                    }
+            let exit_code = expect_as!(span, arg!(values, 0), Value::Int, "exit code");
+
+            if exit_code >= 0 {
+                if exit_code <= i32::MAX as i64 {
+                    process::exit(exit_code as i32)
+                } else {
+                    error!(span, "exit code is too large")
                 }
-                _ => utils::error(span, "exit code expected to be int"),
+            } else {
+                error!(span, "exit code expected to be a positive int")
             }
         }
     }
@@ -68,16 +62,16 @@ fn spawn() -> Ref<Native> {
         arity = 2,
         fun = |rt, span, values| {
             // Retrieving command
-            let cmd = match values.first().cloned().unwrap() {
+            let cmd = match arg!(values, 0) {
                 Value::String(s) => s,
-                _ => utils::error(span, "corrupted command"),
+                _ => error!(span, "corrupted command"),
             };
 
             // Retrieving args
             let args = {
-                let args = match values.get(1).cloned().unwrap() {
+                let args = match arg_ref!(values, 1) {
                     Value::Instance(instance) => instance,
-                    _ => utils::error(span, "corrupted args"),
+                    _ => error!(span, "corrupted args"),
                 };
 
                 // Safety: borrow is temporal for this line
@@ -87,10 +81,10 @@ fn spawn() -> Ref<Native> {
                     // Safety: borrow is temporal, value will be cloned
                     Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
                         Some(vec) => vec.clone(),
-                        _ => utils::error(span, "corrupted args"),
+                        _ => error!(span, "corrupted args"),
                     },
                     _ => {
-                        utils::error(span, "corrupted args");
+                        error!(span, "corrupted args");
                     }
                 }
             };
@@ -102,7 +96,7 @@ fn spawn() -> Ref<Native> {
             // Spawning process
             let child = match cmd.spawn() {
                 Ok(child) => child,
-                Err(err) => utils::error(span, &format!("failed to span process: {err}")),
+                Err(err) => error!(span, &format!("failed to span process: {err}")),
             };
 
             // Searching `Process` class
@@ -110,9 +104,9 @@ fn spawn() -> Ref<Native> {
                 // Safety: borrow is temporal for the end of function
                 Some(module) => match module.borrow().env.borrow().lookup("Process") {
                     Some(Value::Class(ty)) => ty,
-                    _ => utils::error(span, "corrupted module"),
+                    _ => error!(span, "corrupted module"),
                 },
-                None => utils::error(span, "corrupted module"),
+                None => error!(span, "corrupted module"),
             };
 
             // Creating `Process` instance
@@ -133,28 +127,25 @@ fn validate_process<F, V>(span: &Span, value: Value, f: F) -> V
 where
     F: FnOnce(&mut Child) -> V,
 {
-    match value {
-        Value::Instance(instance) => {
-            // Safety: borrow is temporal for this line
-            let internal = instance
-                .borrow_mut()
-                .fields
-                .get("$internal")
-                .cloned()
-                .unwrap();
+    let instance = expect!(span, value, Value::Instance);
 
-            match internal {
-                // Safety: borrow is temporal and short
-                Value::Any(process) => match process.borrow_mut().downcast_mut::<Child>() {
-                    Some(child) => f(child),
-                    _ => utils::error(span, "corrupted process"),
-                },
-                _ => {
-                    utils::error(span, "corrupted process");
-                }
-            }
+    // Safety: borrow is temporal for this line
+    let internal = instance
+        .borrow_mut()
+        .fields
+        .get("$internal")
+        .cloned()
+        .unwrap();
+
+    match internal {
+        // Safety: borrow is temporal and short
+        Value::Any(process) => match process.borrow_mut().downcast_mut::<Child>() {
+            Some(child) => f(child),
+            _ => error!(span, "corrupted process"),
+        },
+        _ => {
+            error!(span, "corrupted process");
         }
-        _ => unreachable!(),
     }
 }
 
@@ -163,27 +154,23 @@ fn validate_process_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
 where
     F: FnOnce(&mut Child) -> V,
 {
-    validate_process(span, values.first().cloned().unwrap(), f)
+    validate_process(span, arg!(values, 0), f)
 }
 
 /// `Process` init method
 fn process_init_method() -> Method {
     native_method! {
         arity = 1,
-        fun = |_, _, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    // Setting `$internal` field
-                    instance
-                        .borrow_mut()
-                        .fields
-                        .insert("$internal".to_string(), values.get(1).cloned().unwrap());
+        fun = |_, span, values| {
+            let instance = expect!(span, arg!(values, 0), Value::Instance);
 
-                    Value::Null
-                }
-                _ => unreachable!(),
-            }
+            // Setting `$internal` field
+            instance
+                .borrow_mut()
+                .fields
+                .insert("$internal".to_string(), arg!(values, 1));
+
+            Value::Null
         }
     }
 }
@@ -259,14 +246,14 @@ fn process_write_method() -> Method {
             validate_process_arg(span, &values, |child| {
                 match &mut child.stdin {
                     Some(stdin) => {
-                        match stdin.write_all(values.get(1).unwrap().to_string().as_bytes()) {
+                        match stdin.write_all(arg_ref!(values, 1).to_string().as_bytes()) {
                             Ok(_) => {}
                             Err(err) => {
-                                utils::error(span, &format!("failed to write into stdin: {err:?}"))
+                                error!(span, &format!("failed to write into stdin: {err:?}"))
                             }
                         }
                     }
-                    None => utils::error(span, "failed to retrieve `stdin`"),
+                    None => error!(span, "failed to retrieve `stdin`"),
                 };
                 Value::Null
             })

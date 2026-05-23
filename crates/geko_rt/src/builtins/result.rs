@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    builtins::utils,
+    error,
     interpreter::Interpreter,
     refs::{MutRef, Ref},
     rt::value::{Class, Instance, Method, Native, Value},
@@ -23,9 +23,7 @@ where
 
             match is_ok {
                 Value::Bool(ok) => f(value, ok),
-                _ => {
-                    utils::error(span, "corrupted result");
-                }
+                _ => error!(span, "corrupted result"),
             }
         }
         _ => unreachable!(),
@@ -141,7 +139,7 @@ fn unwrap() -> Method {
                 if is_ok {
                     value
                 } else {
-                    utils::error(span, "unwrap on error result")
+                    error!(span, "unwrap on error result")
                 }
             })
         }),
@@ -157,7 +155,7 @@ fn unwrap_error() -> Method {
                 if !is_ok {
                     value
                 } else {
-                    utils::error(span, "unwrap error on ok result")
+                    error!(span, "unwrap error on ok result")
                 }
             })
         }),
@@ -176,7 +174,7 @@ fn if_ok() -> Method {
                             Ok(value) => value,
                             Err(_) => bug!("control flow leak"),
                         },
-                        _ => utils::error(span, "invalid function for `if_ok`"),
+                        _ => error!(span, "invalid function for `if_ok`"),
                     }
                 } else {
                     Value::Null
@@ -198,7 +196,7 @@ fn if_error() -> Method {
                             Ok(value) => value,
                             Err(_) => bug!("control flow leak"),
                         },
-                        _ => utils::error(span, "invalid function for `if_error`"),
+                        _ => error!(span, "invalid function for `if_error`"),
                     }
                 } else {
                     Value::Null

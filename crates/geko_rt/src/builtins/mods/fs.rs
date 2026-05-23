@@ -1,8 +1,6 @@
 /// Imports
 use crate::{
-    builtin_class,
-    builtins::utils,
-    callable, native_fun, realm,
+    arg, builtin_class, callable, error, native_fun, realm,
     refs::{MutRef, RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -24,16 +22,16 @@ where
 {
     match path {
         Value::String(path) => f(Utf8PathBuf::from(path)),
-        other => utils::error(span, &format!("`{other}` is not a valid path")),
+        other => error!(span, &format!("`{other}` is not a valid path")),
     }
 }
 
 /// Helper: validates path argument by index
-fn validate_path_arg<F, V>(span: &Span, values: &[Value], index: usize, f: F) -> V
+fn validate_path_arg<F, V>(span: &Span, values: &[Value], idx: usize, f: F) -> V
 where
     F: FnOnce(Utf8PathBuf) -> V,
 {
-    validate_path(span, values.get(index).cloned().unwrap(), f)
+    validate_path(span, arg!(values, idx), f)
 }
 
 /// Helper: validates one path argument
@@ -158,7 +156,7 @@ fn mk_dir() -> Ref<Native> {
                     match fs::create_dir(path) {
                         Ok(_) => Value::Null,
                         Err(err) => {
-                            utils::error(span, &format!("failed to make directory: `{err}`"))
+                            error!(span, &format!("failed to make directory: `{err}`"))
                         }
                     }
                 }
@@ -179,7 +177,7 @@ fn mk_dir_all() -> Ref<Native> {
                     match fs::create_dir_all(path) {
                         Ok(_) => Value::Null,
                         Err(err) => {
-                            utils::error(span, &format!("failed to make directory: `{err}`"))
+                            error!(span, &format!("failed to make directory: `{err}`"))
                         }
                     }
                 }
@@ -199,7 +197,7 @@ fn mk_file() -> Ref<Native> {
                 } else {
                     match File::create(path) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to create file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to create file: `{err}`")),
                     }
                 }
             })
@@ -219,7 +217,7 @@ fn rm_dir() -> Ref<Native> {
                     match fs::remove_dir(path) {
                         Ok(_) => Value::Null,
                         Err(err) => {
-                            utils::error(span, &format!("failed to remove directory: `{err}`"))
+                            error!(span, &format!("failed to remove directory: `{err}`"))
                         }
                     }
                 }
@@ -240,7 +238,7 @@ fn rm_dir_all() -> Ref<Native> {
                     match fs::remove_dir_all(path) {
                         Ok(_) => Value::Null,
                         Err(err) => {
-                            utils::error(span, &format!("failed to remove directory: `{err}`"))
+                            error!(span, &format!("failed to remove directory: `{err}`"))
                         }
                     }
                 }
@@ -260,7 +258,7 @@ fn rm_file() -> Ref<Native> {
                 } else {
                     match fs::remove_file(path) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to remove file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to remove file: `{err}`")),
                     }
                 }
             })
@@ -283,12 +281,12 @@ fn read_dir() -> Ref<Native> {
                             .map(|entry| match entry {
                                 Ok(path) => Value::String(format!("{:?}", path.path())),
                                 Err(err) => {
-                                    utils::error(span, &format!("failed to read entry: `{err}`"))
+                                    error!(span, &format!("failed to read entry: `{err}`"))
                                 }
                             })
                             .collect::<Vec<Value>>(),
                         Err(err) => {
-                            utils::error(span, &format!("failed to read directory: `{err}`"))
+                            error!(span, &format!("failed to read directory: `{err}`"))
                         }
                     };
 
@@ -304,7 +302,7 @@ fn read_dir() -> Ref<Native> {
                             );
                             Value::Instance(list)
                         }
-                        _ => bug!("invalid list instantiation"),
+                        _ => bug!("invalid list call"),
                     }
                 }
             })
@@ -323,7 +321,7 @@ fn copy() -> Ref<Native> {
                 } else {
                     match fs::copy(from, to) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to copy file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to copy file: `{err}`")),
                     }
                 }
             })
@@ -342,7 +340,7 @@ fn rename() -> Ref<Native> {
                 } else {
                     match fs::rename(from, to) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to rename file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to rename file: `{err}`")),
                     }
                 }
             })
@@ -361,7 +359,7 @@ fn lock() -> Ref<Native> {
                 } else {
                     match File::open(path).and_then(|it| it.lock()) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to lock file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to lock file: `{err}`")),
                     }
                 }
             })
@@ -380,7 +378,7 @@ fn lock_shared() -> Ref<Native> {
                 } else {
                     match File::open(path).and_then(|it| it.lock_shared()) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to lock file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to lock file: `{err}`")),
                     }
                 }
             })
@@ -399,7 +397,7 @@ fn unlock() -> Ref<Native> {
                 } else {
                     match File::open(path).and_then(|it| it.unlock()) {
                         Ok(_) => Value::Null,
-                        Err(err) => utils::error(span, &format!("failed to lock file: `{err}`")),
+                        Err(err) => error!(span, &format!("failed to lock file: `{err}`")),
                     }
                 }
             })
@@ -428,7 +426,7 @@ fn write() -> Ref<Native> {
                         rt.io.write(&path, text);
                         Value::Null
                     }
-                    other => utils::error(span, &format!("`{other}` is not valid content")),
+                    other => error!(span, &format!("`{other}` is not valid content")),
                 }
             })
         }

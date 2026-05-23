@@ -1,7 +1,8 @@
 /// Imports
 use crate::{
-    builtin_class,
-    builtins::{list::make_list, utils},
+    arg, arg_ref, builtin_class,
+    builtins::list::make_list,
+    error, expect,
     interpreter::Interpreter,
     native_class, native_method,
     refs::{MutRef, Ref},
@@ -29,11 +30,9 @@ where
             match internal {
                 Value::Any(map) => match map.borrow_mut().downcast_mut::<HashMap<Value, Value>>() {
                     Some(map) => f(map),
-                    _ => utils::error(span, "corrupted dict"),
+                    _ => error!(span, "corrupted dict"),
                 },
-                _ => {
-                    utils::error(span, "corrupted dict");
-                }
+                _ => error!(span, "corrupted dict"),
             }
         }
         _ => unreachable!(),
@@ -45,7 +44,7 @@ fn validate_dict_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
 where
     F: FnOnce(&mut HashMap<Value, Value>) -> V,
 {
-    validate_dict(span, values.first().cloned().unwrap(), f)
+    validate_dict(span, arg!(values, 0), f)
 }
 
 /// Helper: makes new dict
@@ -70,22 +69,20 @@ pub fn make_dict(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
 fn init_method() -> Method {
     native_method! {
         arity = 1,
-        fun = |_, _, values| {
-            let dict = values.first().cloned().unwrap();
-            match dict {
-                Value::Instance(instance) => {
-                    let vec = Value::Any(MutRef::new(RefCell::new(HashMap::<Value, Value>::new())));
+        fun = |_, span, values| {
+            // Retrieving instance
+            let instance = expect!(span, arg!(values, 0), Value::Instance);
 
-                    // Safety: borrow is temporal for this line
-                    instance
-                        .borrow_mut()
-                        .fields
-                        .insert("$internal".to_string(), vec);
+            // Preparing map
+            let map = Value::Any(MutRef::new(RefCell::new(HashMap::<Value, Value>::new())));
 
-                    Value::Null
-                }
-                _ => unreachable!(),
-            }
+            // Safety: borrow is temporal for this line
+            instance
+                .borrow_mut()
+                .fields
+                .insert("$internal".to_string(), map);
+
+            Value::Null
         }
     }
 }
@@ -106,7 +103,7 @@ fn get_method() -> Method {
         arity = 2,
         fun = |_, span, values| {
             validate_dict_arg(span, &values, |map| {
-                map.get(&values.get(1).cloned().unwrap())
+                map.get(arg_ref!(values, 1))
                     .cloned()
                     .unwrap_or(Value::Null)
             })
@@ -121,8 +118,8 @@ fn insert_method() -> Method {
         fun = |_, span, values| {
             validate_dict_arg(span, &values, |map| {
                 map.insert(
-                    values.get(1).cloned().unwrap(),
-                    values.get(2).cloned().unwrap(),
+                    arg!(values, 1),
+                    arg!(values, 2),
                 );
                 Value::Null
             })
@@ -136,7 +133,7 @@ fn remove_method() -> Method {
         arity = 2,
         fun = |_, span, values| {
             validate_dict_arg(span, &values, |map| {
-                map.remove(&values.first().cloned().unwrap());
+                map.remove(&arg!(values, 1));
                 Value::Null
             })
         }
@@ -172,7 +169,7 @@ fn contains_key_method() -> Method {
         arity = 2,
         fun = |_, span, values| {
             validate_dict_arg(span, &values, |map| {
-                Value::Bool(map.contains_key(values.get(1).unwrap()))
+                Value::Bool(map.contains_key(arg_ref!(values, 1)))
             })
         }
     }

@@ -235,3 +235,49 @@ macro_rules! builtin_class {
         }
     }};
 }
+
+/// Expect macros
+#[macro_export]
+macro_rules! expect {
+    ($span:expr, $value:expr, $pat:path) => {
+        match $value {
+            $pat(value) => value,
+            _ => {
+                let full = stringify!($pat);
+                let name = full.split("::").last().unwrap().to_lowercase();
+                $crate::error!($span, format!("value `{}` expected to be `{name}`", $value));
+            }
+        }
+    };
+}
+/// Expect as macros
+#[macro_export]
+macro_rules! expect_as {
+    ($span:expr, $value:expr, $pat:path, $name:expr) => {
+        match $value {
+            $pat(value) => value,
+            _ => {
+                $crate::error!(
+                    $span,
+                    format!("value `{}` expected to be `{}`", $value, $name)
+                );
+            }
+        }
+    };
+}
+
+/// Arg macros
+#[macro_export]
+macro_rules! arg {
+    ($values:expr, $idx:expr) => {
+        $values.get($idx).unwrap().clone()
+    };
+}
+
+/// Arg reference macros
+#[macro_export]
+macro_rules! arg_ref {
+    ($values:expr, $idx:expr) => {
+        $values.get($idx).unwrap()
+    };
+}

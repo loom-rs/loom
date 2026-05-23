@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    callable, error, native_fun, realm,
+    arg_ref, callable, error, native_fun, realm,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -13,7 +13,7 @@ fn int() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Int(i) => Value::Int(*i),
                 Value::Float(f) => Value::Float(*f),
                 other => error!(
@@ -30,7 +30,7 @@ fn float() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Int(i) => Value::Float(*i as f64),
                 Value::Float(f) => Value::Float(*f),
                 other => error!(
@@ -47,7 +47,7 @@ fn bool() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Bool(b) => Value::Bool(*b),
                 Value::String(s) if s == "true" => Value::Bool(true),
                 Value::String(s) if s == "false" => Value::Bool(false),

@@ -5,7 +5,6 @@ mod list;
 mod macros;
 mod mods;
 mod result;
-pub mod utils;
 
 /// Imports
 use crate::{

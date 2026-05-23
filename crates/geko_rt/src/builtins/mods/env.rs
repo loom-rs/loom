@@ -1,8 +1,7 @@
 /// Imports
 use crate::refs::MutRef;
-use crate::{builtin_class, callable, native_fun, realm};
+use crate::{arg_ref, builtin_class, callable, error, native_fun, realm};
 use crate::{
-    builtins::utils::error,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -17,13 +16,13 @@ pub fn set_var() -> Ref<Native> {
     native_fun! {
         arity = 2,
         fun = |_, _, values| {
-            let key = values.first().map(|v| v.to_string()).unwrap_or_default();
+            let key = arg_ref!(values, 0).to_string();
             if !key.is_empty() {
                 // Safety: setting variable is safe because of single-threaded runtime
                 unsafe {
                     std::env::set_var(
                         key,
-                        values.get(1).map(|v| v.to_string()).unwrap_or_default(),
+                        arg_ref!(values, 1).to_string(),
                     )
                 };
             }
@@ -37,7 +36,7 @@ pub fn get_var() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match std::env::var(values.first().map(|v| v.to_string()).unwrap_or_default()) {
+            match std::env::var(arg_ref!(values, 0).to_string()) {
                 Ok(val) => Value::String(val),
                 Err(_) => Value::Null,
             }
@@ -50,7 +49,7 @@ pub fn unset() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| { unsafe {
-            std::env::remove_var(values.first().unwrap().to_string());
+            std::env::remove_var(arg_ref!(values, 0).to_string());
             Value::Null
         }}
     }
@@ -61,9 +60,9 @@ pub fn var() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match std::env::var_os(values.first().map(|v| v.to_string()).unwrap_or_default()) {
+            match std::env::var_os(arg_ref!(values, 0).to_string()) {
                 Some(val) => Value::String(val.to_string_lossy().into_owned()),
-                None => error(span, "os variable is not set"),
+                None => error!(span, "os variable is not set"),
             }
         }
     }
@@ -76,7 +75,7 @@ pub fn cwd() -> Ref<Native> {
         fun = |_, span, _| {
             match std::env::current_dir() {
                 Ok(path) => Value::String(path.to_string_lossy().into_owned()),
-                Err(_) => error(span, "failed to get current work directory"),
+                Err(_) => error!(span, "failed to get current work directory"),
             }
         }
     }
@@ -89,7 +88,7 @@ pub fn home() -> Ref<Native> {
         fun = |_, span, _| {
             match std::env::home_dir() {
                 Some(path) => Value::String(path.to_string_lossy().into_owned()),
-                None => error(span, "could not determine home directory"),
+                None => error!(span, "could not determine home directory"),
             }
         }
     }

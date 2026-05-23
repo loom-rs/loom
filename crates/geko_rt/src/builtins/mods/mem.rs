@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    callable, native_fun, realm,
+    arg, callable, native_fun, realm,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -86,7 +86,7 @@ fn size_of() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            Value::Int(std::mem::size_of_val(&values.first().cloned().unwrap()) as i64)
+            Value::Int(std::mem::size_of_val(&arg!(values, 0)) as i64)
         }
     }
 }
@@ -96,7 +96,7 @@ fn align_of() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            Value::Int(std::mem::align_of_val(&values.first().cloned().unwrap()) as i64)
+            Value::Int(std::mem::align_of_val(&arg!(values, 0)) as i64)
         }
     }
 }

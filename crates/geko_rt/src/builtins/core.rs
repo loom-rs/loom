@@ -1,9 +1,9 @@
 /// Imports
+use crate::{builtin_class, error};
 use crate::{
     builtins::{
         dict, list,
         result::{self, make_result},
-        utils,
     },
     callable, class,
     errors::RuntimeError,
@@ -124,16 +124,10 @@ pub fn len_of() -> Ref<Native> {
                 // If instance, checking of which class this instance is
                 Value::Instance(instance) => {
                     // Retrieving list class
-                    let list_class = match utils::get_builtin(rt, "List") {
-                        Value::Class(t) => t,
-                        _ => bug!("builtin `List` is not a class"),
-                    };
+                    let list_class = builtin_class!(rt, "List");
 
                     // Retrieving dict class
-                    let dict_class = match utils::get_builtin(rt, "Dict") {
-                        Value::Class(t) => t,
-                        _ => bug!("builtin `List` is not a class"),
-                    };
+                    let dict_class = builtin_class!(rt, "Dict");
 
                     // Checking instance is list
                     if Rc::ptr_eq(&instance.borrow_mut().type_of, &list_class) {
@@ -150,10 +144,10 @@ pub fn len_of() -> Ref<Native> {
                             Value::Any(list) => {
                                 match list.borrow_mut().downcast_mut::<Vec<Value>>() {
                                     Some(vec) => Value::Int(vec.len() as i64),
-                                    _ => utils::error(span, "couldn't get len of corrupted list"),
+                                    _ => error!(span, "couldn't get len of corrupted list"),
                                 }
                             }
-                            _ => utils::error(span, "couldn't get len of corrupted list"),
+                            _ => error!(span, "couldn't get len of corrupted list"),
                         }
                     }
                     // Checking instance is dict
@@ -171,20 +165,20 @@ pub fn len_of() -> Ref<Native> {
                             Value::Any(list) => {
                                 match list.borrow_mut().downcast_mut::<HashMap<Value, Value>>() {
                                     Some(map) => Value::Int(map.len() as i64),
-                                    _ => utils::error(span, "couldn't get len of corrupted dict"),
+                                    _ => error!(span, "couldn't get len of corrupted dict"),
                                 }
                             }
-                            _ => utils::error(span, "couldn't get len of corrupted dict"),
+                            _ => error!(span, "couldn't get len of corrupted dict"),
                         }
                     } else {
-                        utils::error(
+                        error!(
                             span,
                             &format!("couldn't get len of `{:?}`", Value::Instance(instance)),
                         )
                     }
                 }
                 // Anything else => error
-                other => utils::error(span, &format!("couldn't get len of `{:?}`", other)),
+                other => error!(span, &format!("couldn't get len of `{:?}`", other)),
             }
         }
     }

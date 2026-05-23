@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    callable, native_fun, realm,
+    arg_ref, callable, native_fun, realm,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -14,7 +14,7 @@ fn int() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Int(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -27,7 +27,7 @@ fn float() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Float(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -40,7 +40,7 @@ fn bool() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Bool(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -53,7 +53,7 @@ fn string() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::String(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -66,7 +66,7 @@ fn callable() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Callable(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -79,7 +79,7 @@ fn meta() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Class(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -92,7 +92,7 @@ fn module() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Module(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -105,7 +105,7 @@ fn instance() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            match values.first().unwrap() {
+            match arg_ref!(values, 0) {
                 Value::Instance(_) => Value::Bool(true),
                 _ => Value::Bool(false),
             }
@@ -118,8 +118,8 @@ fn type_of() -> Ref<Native> {
     native_fun! {
         arity = 2,
         fun = |_, _, values| {
-            match values.first().unwrap() {
-                Value::Instance(instance) => match values.get(1).unwrap() {
+            match arg_ref!(values, 0) {
+                Value::Instance(instance) => match arg_ref!(values, 1) {
                     Value::Class(ty) => Value::Bool(Rc::ptr_eq(&instance.borrow().type_of, ty)),
                     _ => Value::Bool(false),
                 },

@@ -1,7 +1,6 @@
 /// Imports
 use crate::{
-    builtins::utils,
-    callable, native_fun, realm,
+    arg, arg_ref, callable, error, native_fun, realm,
     refs::{RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -18,7 +17,7 @@ fn b64() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, _, values| {
-            Value::String(BASE64_STANDARD.encode(values.first().cloned().unwrap().to_string()))
+            Value::String(BASE64_STANDARD.encode(arg_ref!(values, 0).to_string()))
         }
     }
 }
@@ -28,9 +27,9 @@ fn de_b64() -> Ref<Native> {
     native_fun! {
         arity = 1,
         fun = |_, span, values| {
-            match BASE64_STANDARD.decode(values.first().cloned().unwrap().to_string()) {
+            match BASE64_STANDARD.decode(arg_ref!(values, 0).to_string()) {
                 Ok(bytes) => Value::String(String::from_utf8_lossy(&bytes).to_string()),
-                Err(err) => utils::error(span, &format!("failed to decode `base64` string: {err}")),
+                Err(err) => error!(span, &format!("failed to decode `base64` string: {err}")),
             }
         }
     }
@@ -42,7 +41,7 @@ fn sha1() -> Ref<Native> {
         arity = 1,
         fun = |_, _, values| {
             Value::String(hex::encode(Sha1::digest(
-                values.first().cloned().unwrap().to_string(),
+                arg!(values, 0).to_string(),
             )))
         }
     }
@@ -54,7 +53,7 @@ fn sha256() -> Ref<Native> {
         arity = 1,
         fun = |_, _, values| {
             Value::String(hex::encode(Sha256::digest(
-                values.first().cloned().unwrap().to_string(),
+                arg!(values, 0).to_string(),
             )))
         }
     }
@@ -66,7 +65,7 @@ fn sha224() -> Ref<Native> {
         arity = 1,
         fun = |_, _, values| {
             Value::String(hex::encode(Sha224::digest(
-                values.first().cloned().unwrap().to_string(),
+                arg!(values, 0).to_string(),
             )))
         }
     }
@@ -78,7 +77,7 @@ fn sha512() -> Ref<Native> {
         arity = 1,
         fun = |_, _, values| {
             Value::String(hex::encode(Sha512::digest(
-                values.first().cloned().unwrap().to_string(),
+                arg!(values, 0).to_string(),
             )))
         }
     }
@@ -90,7 +89,7 @@ fn sha384() -> Ref<Native> {
         arity = 1,
         fun = |_, _, values| {
             Value::String(hex::encode(Sha384::digest(
-                values.first().cloned().unwrap().to_string(),
+                arg!(values, 0).to_string(),
             )))
         }
     }
@@ -102,7 +101,7 @@ fn md5() -> Ref<Native> {
         arity = 1,
         fun = |_, _, values| {
             Value::String(hex::encode(Md5::digest(
-                values.first().cloned().unwrap().to_string(),
+                arg!(values, 0).to_string(),
             )))
         }
     }

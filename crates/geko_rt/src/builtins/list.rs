@@ -1,7 +1,6 @@
 /// Imports
 use crate::{
-    builtin_class,
-    builtins::utils,
+    arg, arg_ref, builtin_class, error, expect,
     interpreter::Interpreter,
     native_class, native_method,
     refs::{MutRef, Ref},
@@ -17,27 +16,25 @@ fn validate_list<F, V>(span: &Span, list: Value, f: F) -> V
 where
     F: FnOnce(&mut Vec<Value>) -> V,
 {
-    match list {
-        Value::Instance(instance) => {
-            // Safety: borrow is temporal for this line
-            let internal = instance
-                .borrow_mut()
-                .fields
-                .get("$internal")
-                .cloned()
-                .unwrap();
+    // Retrieving instance
+    let instance = expect!(span, list, Value::Instance);
 
-            match internal {
-                Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
-                    Some(vec) => f(vec),
-                    _ => utils::error(span, "corrupted list"),
-                },
-                _ => {
-                    utils::error(span, "corrupted list");
-                }
-            }
+    // Safety: borrow is temporal for this line
+    let internal = instance
+        .borrow_mut()
+        .fields
+        .get("$internal")
+        .cloned()
+        .unwrap();
+
+    match internal {
+        Value::Any(list) => match list.borrow_mut().downcast_mut::<Vec<Value>>() {
+            Some(vec) => f(vec),
+            _ => error!(span, "corrupted list"),
+        },
+        _ => {
+            error!(span, "corrupted list");
         }
-        _ => unreachable!(),
     }
 }
 
@@ -46,7 +43,7 @@ fn validate_list_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
 where
     F: FnOnce(&mut Vec<Value>) -> V,
 {
-    validate_list(span, values.first().cloned().unwrap(), f)
+    validate_list(span, arg!(values, 0), f)
 }
 
 /// Helper: validates index
@@ -57,17 +54,17 @@ where
     match idx {
         Value::Int(idx) => {
             if idx < 0 {
-                utils::error(span, "index should be positive int")
+                error!(span, "index should be positive int")
             } else {
                 let idx = idx as usize;
                 if idx >= len {
-                    utils::error(span, "index out of bounds")
+                    error!(span, "index out of bounds")
                 } else {
                     f(idx)
                 }
             }
         }
-        _ => utils::error(span, "index should be an int"),
+        _ => error!(span, "index should be an int"),
     }
 }
 
@@ -76,7 +73,7 @@ fn validate_idx_arg<F, V>(span: &Span, values: &[Value], idx: usize, len: usize,
 where
     F: FnOnce(usize) -> V,
 {
-    validate_idx(span, values.get(idx).cloned().unwrap(), len, f)
+    validate_idx(span, arg!(values, idx), len, f)
 }
 
 /// Helper: makes new list
@@ -100,22 +97,20 @@ pub fn make_list(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
 fn init_method() -> Method {
     native_method! {
         arity = 1,
-        fun = |_, _, values| {
-            let list = values.first().cloned().unwrap();
-            match list {
-                Value::Instance(instance) => {
-                    let vec = Value::Any(MutRef::new(RefCell::new(Vec::<Value>::new())));
+        fun = |_, span, values| {
+            // Retrieving instance
+            let instance = expect!(span, arg!(values, 0), Value::Instance);
 
-                    // Safety: borrow is temporal for this line
-                    instance
-                        .borrow_mut()
-                        .fields
-                        .insert("$internal".to_string(), vec);
+            // Preparing vector
+            let vec = Value::Any(MutRef::new(RefCell::new(Vec::<Value>::new())));
 
-                    Value::Null
-                }
-                _ => unreachable!(),
-            }
+            // Safety: borrow is temporal for this line
+            instance
+                .borrow_mut()
+                .fields
+                .insert("$internal".to_string(), vec);
+
+            Value::Null
         }
     }
 }
@@ -136,7 +131,7 @@ fn push_method() -> Method {
         arity = 2,
         fun = |_, span, values| {
             validate_list_arg(span, &values, |vec| {
-                vec.push(values.get(1).cloned().unwrap());
+                vec.push(arg!(values, 1));
                 Value::Null
             })
         }
@@ -162,7 +157,7 @@ fn set_method() -> Method {
         fun = |_, span, values| {
             validate_list_arg(span, &values, |vec| {
                 validate_idx_arg(span, &values, 1, vec.len(), |idx| {
-                    vec[idx] = values.get(2).cloned().unwrap();
+                    vec[idx] = arg!(values, 2);
                     Value::Null
                 })
             })
@@ -177,7 +172,7 @@ fn insert_method() -> Method {
         fun = |_, span, values| {
             validate_list_arg(span, &values, |vec| {
                 validate_idx_arg(span, &values, 1, vec.len(), |idx| {
-                    vec.insert(idx, values.get(2).cloned().unwrap());
+                    vec.insert(idx, arg!(values, 2));
                     Value::Null
                 })
             })
@@ -239,7 +234,7 @@ fn index_of_method() -> Method {
         arity = 2,
         fun = |_, span, values| {
             validate_list_arg(span, &values, |vec| {
-                let value = values.get(1).cloned().unwrap();
+                let value = arg!(values, 1);
                 vec.iter()
                     .position(|v| *v == value)
                     .map(|it| Value::Int(it as i64))
@@ -255,7 +250,7 @@ fn contains_method() -> Method {
         arity = 2,
         fun = |_, span, values| {
             validate_list_arg(span, &values, |vec| {
-                Value::Bool(vec.contains(values.get(1).unwrap()))
+                Value::Bool(vec.contains(arg_ref!(values, 1)))
             })
         }
     }
@@ -269,7 +264,7 @@ fn choice_method() -> Method {
             validate_list_arg(span, &values, |vec| {
                 match vec.get(rand::rng().random_range(0..vec.len())) {
                     Some(val) => val.clone(),
-                    _ => utils::error(
+                    _ => error!(
                         span,
                         "list must have 1 or more elements to perform random choice on it",
                     ),
