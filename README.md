@@ -9,7 +9,7 @@ Nightly builds are available giving you a chance to explore and test the languag
 
 #### 🏠 Quick Start
 ```geko
-println("Hello, world!");
+putln("Hello, world!");
 ```
 
 #### ✨ Examples
