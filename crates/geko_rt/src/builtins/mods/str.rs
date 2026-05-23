@@ -276,6 +276,42 @@ fn repeat() -> Ref<Native> {
     }
 }
 
+/// Check str is ascii number
+fn is_ascii_number() -> Ref<Native> {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
+            let str = expect!(&span, arg!(values, 0), Value::String);
+
+            Value::Bool(str.chars().all(|c| c.is_ascii_digit()))
+        }
+    }
+}
+
+/// Check str is word
+fn is_word() -> Ref<Native> {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
+            let str = expect!(&span, arg!(values, 0), Value::String);
+
+            Value::Bool(str.chars().all(|c| c.is_alphabetic()))
+        }
+    }
+}
+
+/// Check str is ascii word
+fn is_ascii_word() -> Ref<Native> {
+    native_fun! {
+        arity = 1,
+        fun = |_, span, values| {
+            let str = expect!(&span, arg!(values, 0), Value::String);
+
+            Value::Bool(str.chars().all(|c| c.is_ascii()))
+        }
+    }
+}
+
 /// Provides `mem` module env
 pub fn provide_env() -> RealmRef {
     realm! {
@@ -296,6 +332,9 @@ pub fn provide_env() -> RealmRef {
         to_ascii_upper => callable!(to_ascii_upper()),
         to_ascii_lower => callable!(to_ascii_lower()),
         matches => callable!(matches()),
-        repeat => callable!(repeat())
+        repeat => callable!(repeat()),
+        is_ascii_number => callable!(is_ascii_number()),
+        is_word => callable!(is_word()),
+        is_ascii_word => callable!(is_ascii_word())
     }
 }
