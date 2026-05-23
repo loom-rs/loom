@@ -425,6 +425,8 @@ impl<'io> Interpreter<'io> {
         let path_to_module = if path.starts_with("@/") {
             Some(
                 Utf8PathBuf::from(span.0.name())
+                    .parent()
+                    .unwrap()
                     .join(&path[2..])
                     .with_extension("gk"),
             )

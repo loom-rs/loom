@@ -39,14 +39,14 @@ fn main() {
     // Parsing arguments
     let path = Args::parse().path;
 
-    // Retrieving file stem used to be a module name
-    let name = path.file_stem().unwrap_or("<unknown>");
-
     // Preparing IO
     let io = CliIO;
+
+    // Preparing module name
+    let name = io.canonicalize(&path).unwrap().to_string();
 
     // Interpreting
     let code = io.read(&path);
     let mut interpreter = Interpreter::new(&io);
-    let _ = interpreter.interpret_module(name, &code);
+    let _ = interpreter.interpret_module(&name, &code);
 }
