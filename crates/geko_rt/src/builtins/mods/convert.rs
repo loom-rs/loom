@@ -15,7 +15,11 @@ fn int() -> Ref<Native> {
         fun = |_, span, values| {
             match arg_ref!(values, 0) {
                 Value::Int(i) => Value::Int(*i),
-                Value::Float(f) => Value::Float(*f),
+                Value::Float(f) => Value::Int(f.round() as i64),
+                Value::String(s) => match s.parse::<i64>() {
+                    Ok(int) => Value::Int(int),
+                    Err(_) => error!(span, &format!("failed to parse int value")),
+                }
                 other => error!(
                     span,
                     &format!("could not convert `{other}` into int value")
@@ -33,6 +37,10 @@ fn float() -> Ref<Native> {
             match arg_ref!(values, 0) {
                 Value::Int(i) => Value::Float(*i as f64),
                 Value::Float(f) => Value::Float(*f),
+                Value::String(s) => match s.parse::<f64>() {
+                    Ok(int) => Value::Float(int),
+                    Err(_) => error!(span, &format!("failed to parse float value")),
+                }
                 other => error!(
                     span,
                     &format!("could not convert `{other}` into float value")
