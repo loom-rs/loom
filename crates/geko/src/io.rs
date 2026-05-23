@@ -24,6 +24,15 @@ impl IO for CliIO {
         print!("{text}");
     }
 
+    /// Canonicalize implementation
+    fn canonicalize(&self, path: &Utf8PathBuf) -> Option<Utf8PathBuf> {
+        // Reading file
+        match path.canonicalize_utf8() {
+            Ok(path) => Some(path),
+            Err(_) => bail!(IOError::FileNotFound(path.clone())),
+        }
+    }
+
     /// Read implementation
     fn read(&self, path: &Utf8PathBuf) -> String {
         // Reading file

@@ -438,7 +438,11 @@ impl<'io> Interpreter<'io> {
         // Resolving module by path
         let module = match path_to_module {
             Some(path) if path.exists() => {
-                self.interpret_module(&path.to_string(), &self.io.read(&path))
+                // Preparing module id
+                let module_id = &self.io.canonicalize(&path).unwrap().to_string();
+
+                // Interpreting
+                self.interpret_module(module_id, &self.io.read(&path))
             }
             _ => match self.load_builtin_module(&path.to_string()) {
                 Some(module) => module,

@@ -33,6 +33,9 @@ pub trait IO {
     /// Writes output
     fn output(&self, text: &str);
 
+    /// Canonicalizes path
+    fn canonicalize(&self, path: &Utf8PathBuf) -> Option<Utf8PathBuf>;
+
     /// Reads file
     fn read(&self, path: &Utf8PathBuf) -> String;
 

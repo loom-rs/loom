@@ -26,6 +26,11 @@ impl IO for WasmIO {
         js_print(text);
     }
 
+    // Canonicalize implementation
+    fn canonicalize(&self, _: &Utf8PathBuf) -> Option<Utf8PathBuf> {
+        None
+    }
+
     // Read implementation
     fn read(&self, _: &Utf8PathBuf) -> String {
         bail!(IOError::NotSupported("read"));
