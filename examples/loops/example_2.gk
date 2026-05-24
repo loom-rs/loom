@@ -1,5 +1,5 @@
 #[ Progress bar that erases only the last line ]#
-use "process" for sleep
+use "process" pick sleep
 
 progress := 0
 while progress <= 100 {

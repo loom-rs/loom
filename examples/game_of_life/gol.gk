@@ -1,6 +1,6 @@
 # Game of Life implementation
-use "math" for rnd
-use "process" for sleep
+use "math" pick rnd
+use "process" pick sleep
 
 WIDTH := 100
 HEIGHT := 60

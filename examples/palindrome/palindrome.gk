@@ -1,4 +1,4 @@
-use "math" for floor
+use "math" pick floor
 
 fun is_palindrome(n) {
     original := n
