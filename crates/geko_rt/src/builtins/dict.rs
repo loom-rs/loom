@@ -40,12 +40,47 @@ where
     }
 }
 
+/// Helper: validates cloned dict
+fn validate_cloned_dict<F, V>(span: &Span, dict: Value, f: F) -> V
+where
+    F: FnOnce(HashMap<Value, Value>) -> V,
+{
+    match dict {
+        Value::Instance(instance) => {
+            // Safety: borrow is temporal for this line
+            let internal = instance
+                .borrow_mut()
+                .fields
+                .get("$internal")
+                .cloned()
+                .unwrap();
+
+            match internal {
+                Value::Any(map) => match map.borrow().downcast_ref::<HashMap<Value, Value>>() {
+                    Some(map) => f(map.clone()),
+                    _ => error!(span, "corrupted dict"),
+                },
+                _ => error!(span, "corrupted dict"),
+            }
+        }
+        _ => unreachable!(),
+    }
+}
+
 /// Helper: validates dict argument
 fn validate_dict_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
 where
     F: FnOnce(&mut HashMap<Value, Value>) -> V,
 {
     validate_dict(span, arg!(values, 0), f)
+}
+
+/// Helper: validates cloned dict argument
+fn validate_cloned_dict_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
+where
+    F: FnOnce(HashMap<Value, Value>) -> V,
+{
+    validate_cloned_dict(span, arg!(values, 0), f)
 }
 
 /// Helper: makes new dict
@@ -93,7 +128,7 @@ fn to_string_method() -> Method {
     native_method! {
         arity = 1,
         fun = |rt, span, values| {
-            validate_dict_arg(span, &values, |map| Value::String(
+            validate_cloned_dict_arg(span, &values, |map| Value::String(
                 map.iter()
                     .map(|(k, v)| {
                         format!(

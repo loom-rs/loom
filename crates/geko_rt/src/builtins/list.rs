@@ -39,12 +39,48 @@ where
     }
 }
 
+/// Helper: validates cloned list
+fn validate_cloned_list<F, V>(span: &Span, list: Value, f: F) -> V
+where
+    F: FnOnce(Vec<Value>) -> V,
+{
+    // Retrieving instance
+    let instance = expect!(span, list, Value::Instance);
+
+    // Safety: borrow is temporal for this line
+    let internal = instance
+        .borrow_mut()
+        .fields
+        .get("$internal")
+        .cloned()
+        .unwrap();
+
+    match internal {
+        // Safety: borrow is temporal
+        Value::Any(list) => match list.borrow().downcast_ref::<Vec<Value>>() {
+            Some(vec) => f(vec.clone()),
+            _ => error!(span, "corrupted list"),
+        },
+        _ => {
+            error!(span, "corrupted list");
+        }
+    }
+}
+
 /// Helper: validates list argument
 fn validate_list_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
 where
     F: FnOnce(&mut Vec<Value>) -> V,
 {
     validate_list(span, arg!(values, 0), f)
+}
+
+/// Helper: validates cloned list argument
+fn validate_cloned_list_arg<F, V>(span: &Span, values: &[Value], f: F) -> V
+where
+    F: FnOnce(Vec<Value>) -> V,
+{
+    validate_cloned_list(span, arg!(values, 0), f)
 }
 
 /// Helper: validates index
@@ -121,14 +157,16 @@ fn to_string_method() -> Method {
     native_method! {
         arity = 1,
         fun = |rt, span, values| {
-            validate_list_arg(span, &values, |vec| Value::String(
-                vec.iter()
-                    .map(|v| {
-                        to_string!(span, rt, v)
-                    })
-                    .collect::<Vec<_>>()
-                    .join(",")
-            ))
+            validate_cloned_list_arg(span, &values, |vec| {
+                Value::String(
+                    vec.iter()
+                        .map(|v| {
+                            to_string!(span, rt, v)
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )
+            })
         }
     }
 }
