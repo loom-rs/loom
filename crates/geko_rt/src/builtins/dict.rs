@@ -140,7 +140,7 @@ fn to_string_method() -> Method {
                             )
                         })
                         .collect::<Vec<_>>()
-                        .join(",")
+                        .join(", ")
                 )
             ))
         }

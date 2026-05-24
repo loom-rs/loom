@@ -166,7 +166,7 @@ fn to_string_method() -> Method {
                                 to_string!(span, rt, v)
                             })
                             .collect::<Vec<_>>()
-                            .join(",")
+                            .join(", ")
                     )
                 )
             })
