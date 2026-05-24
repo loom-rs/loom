@@ -395,8 +395,8 @@ impl<'io> Interpreter<'io> {
     pub(crate) fn call_closure(
         &mut self,
         span: &Span,
-        args: Vec<Value>,
         closure: Ref<Closure>,
+        args: Vec<Value>,
     ) -> Flow<Value> {
         // Checking arity
         self.check_arity(span, closure.function.params.len(), args.len());
@@ -435,8 +435,8 @@ impl<'io> Interpreter<'io> {
     pub(crate) fn call_native(
         &mut self,
         span: &Span,
-        args: Vec<Value>,
         native: Ref<Native>,
+        args: Vec<Value>,
     ) -> Flow<Value> {
         // Checking arity
         self.check_arity(span, native.arity, args.len());
@@ -459,11 +459,11 @@ impl<'io> Interpreter<'io> {
     pub(crate) fn call_class(
         &mut self,
         span: &Span,
+        class: Ref<Class>,
         args: Vec<Value>,
-        ty: Ref<Class>,
     ) -> Flow<Value> {
         // Creating instance
-        let instance = self.create_instance(ty);
+        let instance = self.create_instance(class);
 
         // If `init` exists and is a bound method, call it
         if let Some(Value::Callable(Callable::Bound(bound))) = {
@@ -472,7 +472,7 @@ impl<'io> Interpreter<'io> {
             borrow.fields.get("init").cloned()
         } {
             // Calling bound method, if found
-            self.call_bound_method(span, args, bound)?;
+            self.call_bound_method(span, bound, args)?;
         } else {
             // Either no init or not a bound method -> check arity 0
             self.check_arity(span, 0, args.len());
@@ -482,34 +482,34 @@ impl<'io> Interpreter<'io> {
         Ok(Value::Instance(instance))
     }
 
-    /// Calls callable
-    pub(crate) fn call(
-        &mut self,
-        span: &Span,
-        args: Vec<Value>,
-        callable: Callable,
-    ) -> Flow<Value> {
-        match callable {
-            Callable::Closure(closure) => self.call_closure(span, args, closure),
-            Callable::Bound(bound) => self.call_bound_method(span, args, bound),
-            Callable::Native(native) => self.call_native(span, args, native),
-        }
-    }
-
     /// Calls bound method
-    fn call_bound_method(
+    pub(crate) fn call_bound_method(
         &mut self,
         span: &Span,
-        mut args: Vec<Value>,
         bound: Ref<Bound>,
+        mut args: Vec<Value>,
     ) -> Flow<Value> {
         // Inserting `self` parameter
         args.insert(0, Value::Instance(bound.belongs_to.clone()));
 
         // Bound closure
         match &bound.method {
-            Method::Native(native) => self.call_native(span, args, native.clone()),
-            Method::Closure(closure) => self.call_closure(span, args, closure.clone()),
+            Method::Native(native) => self.call_native(span, native.clone(), args),
+            Method::Closure(closure) => self.call_closure(span, closure.clone(), args),
+        }
+    }
+
+    /// Calls callable
+    pub(crate) fn call(
+        &mut self,
+        span: &Span,
+        callable: Callable,
+        args: Vec<Value>,
+    ) -> Flow<Value> {
+        match callable {
+            Callable::Closure(closure) => self.call_closure(span, closure, args),
+            Callable::Bound(bound) => self.call_bound_method(span, bound, args),
+            Callable::Native(native) => self.call_native(span, native, args),
         }
     }
 
@@ -522,8 +522,8 @@ impl<'io> Interpreter<'io> {
         let value = self.eval(what)?;
         match value {
             // Calling
-            Value::Callable(callable) => self.call(span, args, callable),
-            Value::Class(ty) => self.call_class(span, args, ty),
+            Value::Callable(callable) => self.call(span, callable, args),
+            Value::Class(ty) => self.call_class(span, ty, args),
             _ => bail!(RuntimeError::CouldNotCall {
                 src: span.0.clone(),
                 span: span.1.clone().into(),
@@ -543,15 +543,15 @@ impl<'io> Interpreter<'io> {
 
         // Calling list constructor
         let list_value = {
-            let list_value = self
+            let class = self
                 .builtins
                 .env
                 .borrow()
                 .lookup("List")
                 .unwrap_or_else(|| bug!("no builtin `List` found"));
 
-            match list_value {
-                Value::Class(t) => match self.call_class(span, Vec::new(), t)? {
+            match class {
+                Value::Class(class) => match self.call_class(span, class, vec![])? {
                     Value::Instance(instance) => instance,
                     _ => unreachable!(),
                 },
@@ -583,15 +583,15 @@ impl<'io> Interpreter<'io> {
 
         // Calling dict constructor
         let dict_value = {
-            let dict_value = self
+            let class = self
                 .builtins
                 .env
                 .borrow()
                 .lookup("Dict")
                 .unwrap_or_else(|| bug!("no builtin `Dict` found"));
 
-            match dict_value {
-                Value::Class(t) => match self.call_class(span, Vec::new(), t)? {
+            match class {
+                Value::Class(class) => match self.call_class(span, class, vec![])? {
                     Value::Instance(instance) => instance,
                     _ => unreachable!(),
                 },
@@ -644,7 +644,7 @@ impl<'io> Interpreter<'io> {
                 .unwrap_or_else(|| bug!("no builtin `List` found"));
 
             match list_value {
-                Value::Class(t) => match self.call_class(span, Vec::new(), t)? {
+                Value::Class(t) => match self.call_class(span, t, vec![])? {
                     Value::Instance(instance) => instance,
                     _ => unreachable!(),
                 },

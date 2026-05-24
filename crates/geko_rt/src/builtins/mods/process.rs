@@ -112,8 +112,8 @@ fn spawn() -> Ref<Native> {
             // Creating `Process` instance
             match rt.call_class(
                 span,
-                vec![Value::Any(MutRef::new(RefCell::new(child)))],
                 process_class,
+                vec![Value::Any(MutRef::new(RefCell::new(child)))],
             ) {
                 Ok(val) => val,
                 Err(_) => bug!("control flow leak"),

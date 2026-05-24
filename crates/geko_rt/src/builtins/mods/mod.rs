@@ -7,8 +7,8 @@ pub mod is;
 pub mod math;
 pub mod mem;
 pub mod process;
-pub mod time;
 pub mod str;
+pub mod time;
 
 /// Imports
 use crate::{modules, refs::MutRef, rt::value::Module};

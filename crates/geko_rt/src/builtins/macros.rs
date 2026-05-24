@@ -281,3 +281,43 @@ macro_rules! arg_ref {
         $values.get($idx).unwrap()
     };
 }
+
+/// To string value macros
+#[macro_export]
+macro_rules! to_string_value {
+    ($span:expr, $rt:expr, $value:expr) => {
+        if let Value::Instance(i) = $value {
+            match i.borrow().fields.get("to_string") {
+                Some($crate::rt::value::Value::Callable(callable)) => {
+                    match $rt.call($span, callable.clone(), vec![]) {
+                        Ok(value) => value,
+                        Err(_) => geko_common::bug!("control flow leak"),
+                    }
+                }
+                _ => $crate::rt::value::Value::Instance(i.clone()),
+            }
+        } else {
+            $value.clone()
+        }
+    };
+}
+
+/// To string macros
+#[macro_export]
+macro_rules! to_string {
+    ($span:expr, $rt:expr, $value:expr) => {
+        if let Value::Instance(i) = $value {
+            match i.borrow().fields.get("to_string") {
+                Some($crate::rt::value::Value::Callable(callable)) => {
+                    match $rt.call($span, callable.clone(), vec![]) {
+                        Ok(value) => format!("{value:?}"),
+                        Err(_) => geko_common::bug!("control flow leak"),
+                    }
+                }
+                _ => format!("{:?}", $crate::rt::value::Value::Instance(i.clone())),
+            }
+        } else {
+            format!("{:?}", $value)
+        }
+    };
+}

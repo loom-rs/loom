@@ -7,6 +7,7 @@ use crate::{
     native_class, native_method,
     refs::{MutRef, Ref},
     rt::value::{Class, Instance, Method, Native, Value},
+    to_string,
 };
 use geko_common::bug;
 use geko_lex::token::Span;
@@ -54,7 +55,7 @@ pub fn make_dict(rt: &mut Interpreter, span: &Span) -> MutRef<Instance> {
     let class = builtin_class!(rt, "Dict");
 
     // Calling class
-    match rt.call_class(span, Vec::new(), class) {
+    match rt.call_class(span, class, vec![]) {
         Ok(Value::Instance(instance)) => instance,
         Ok(_) => unreachable!(),
         Err(err) => {
@@ -91,8 +92,19 @@ fn init_method() -> Method {
 fn to_string_method() -> Method {
     native_method! {
         arity = 1,
-        fun = |_, span, values| {
-            validate_dict_arg(span, &values, |map| Value::String(format!("{map:?}")))
+        fun = |rt, span, values| {
+            validate_dict_arg(span, &values, |map| Value::String(
+                map.iter()
+                    .map(|(k, v)| {
+                        format!(
+                            "{}: {}",
+                            to_string!(span, rt, k),
+                            to_string!(span, rt, v)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ))
         }
     }
 }

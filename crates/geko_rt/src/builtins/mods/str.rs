@@ -57,7 +57,7 @@ fn chars() -> Ref<Native> {
             let class = builtin_class!(rt, "List");
 
             // Calling class
-            match rt.call_class(span, Vec::new(), class) {
+            match rt.call_class(span, class, vec![]) {
                 Ok(Value::Instance(list)) => {
                     list.borrow_mut().fields.insert(
                         "$internal".to_string(),
@@ -87,7 +87,7 @@ fn split() -> Ref<Native> {
             let class = builtin_class!(rt, "List");
 
             // Calling class
-            match rt.call_class(span, Vec::new(), class) {
+            match rt.call_class(span, class, vec![]) {
                 Ok(Value::Instance(list)) => {
                     list.borrow_mut().fields.insert(
                         "$internal".to_string(),

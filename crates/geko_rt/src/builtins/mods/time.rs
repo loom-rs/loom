@@ -17,7 +17,7 @@ use std::{cell::RefCell, collections::HashMap};
 /// Helper: creates fresh `Time` with `NaiveTimeDelta`
 fn fresh_time(rt: &mut Interpreter, span: &Span, time: NaiveDateTime) -> Value {
     // Searching `Time` class
-    let time_class = match rt.builtins.modules.get("time") {
+    let class = match rt.builtins.modules.get("time") {
         // Safety: borrow is temporal for the end of function
         Some(module) => match module.borrow().env.borrow().lookup("Time") {
             Some(Value::Class(ty)) => ty,
@@ -29,8 +29,8 @@ fn fresh_time(rt: &mut Interpreter, span: &Span, time: NaiveDateTime) -> Value {
     // Creating `Time` instance
     match rt.call_class(
         span,
+        class,
         vec![Value::Any(MutRef::new(RefCell::new(time)))],
-        time_class,
     ) {
         Ok(val) => val,
         Err(_) => bug!("control flow leak"),

@@ -54,7 +54,7 @@ pub fn make_result(
         .unwrap_or_else(|| bug!("no builtin `Result` found"));
 
     match result_value {
-        Value::Class(t) => match rt.call_class(span, vec![value, Value::Bool(is_ok)], t) {
+        Value::Class(t) => match rt.call_class(span, t, vec![value, Value::Bool(is_ok)]) {
             Ok(Value::Instance(instance)) => instance,
             Ok(_) => unreachable!(),
             Err(err) => {
@@ -170,7 +170,7 @@ fn if_ok() -> Method {
             validate_result_arg(span, &values, |value, is_ok| {
                 if is_ok {
                     match values.get(1).cloned().unwrap() {
-                        Value::Callable(callable) => match rt.call(span, vec![value], callable) {
+                        Value::Callable(callable) => match rt.call(span, callable, vec![value]) {
                             Ok(value) => value,
                             Err(_) => bug!("control flow leak"),
                         },
@@ -192,7 +192,7 @@ fn if_error() -> Method {
             validate_result_arg(span, &values, |value, is_ok| {
                 if !is_ok {
                     match values.get(1).cloned().unwrap() {
-                        Value::Callable(callable) => match rt.call(span, vec![value], callable) {
+                        Value::Callable(callable) => match rt.call(span, callable, vec![value]) {
                             Ok(value) => value,
                             Err(_) => bug!("control flow leak"),
                         },

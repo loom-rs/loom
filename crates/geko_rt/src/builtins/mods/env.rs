@@ -103,7 +103,7 @@ pub fn args() -> Ref<Native> {
             let class = builtin_class!(rt, "List");
 
             // Calling class
-            match rt.call_class(span, Vec::new(), class) {
+            match rt.call_class(span, class, vec![]) {
                 Ok(val) => match val {
                     // Setting up internal vector
                     Value::Instance(list) => {

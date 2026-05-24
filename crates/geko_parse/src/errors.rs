@@ -1,8 +1,8 @@
+use geko_lex::token::TokenKind;
 /// Imports
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use std::sync::Arc;
 use thiserror::Error;
-use geko_lex::token::TokenKind;
 
 /// Parser error
 #[derive(Error, Diagnostic, Debug)]
