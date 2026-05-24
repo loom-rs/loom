@@ -1,7 +1,7 @@
 /// Imports
 use crate::{
-    arg, arg_ref, callable, class, error, expect, expect_as, native_class, native_fun,
-    native_method, realm,
+    arg, arg_ref, builtin_module_class, callable, class, error, expect, expect_as, native_class,
+    native_fun, native_method, realm,
     refs::{MutRef, RealmRef, Ref},
     rt::{
         realm::Realm,
@@ -100,19 +100,12 @@ fn spawn() -> Ref<Native> {
             };
 
             // Searching `Process` class
-            let process_class = match rt.builtins.modules.get("process") {
-                // Safety: borrow is temporal for the end of function
-                Some(module) => match module.borrow().env.borrow().lookup("Process") {
-                    Some(Value::Class(ty)) => ty,
-                    _ => error!(span, "corrupted module"),
-                },
-                None => error!(span, "corrupted module"),
-            };
+            let class = builtin_module_class!(rt, "process", "Process");
 
             // Creating `Process` instance
             match rt.call_class(
                 span,
-                process_class,
+                class,
                 vec![Value::Any(MutRef::new(RefCell::new(child)))],
             ) {
                 Ok(val) => val,

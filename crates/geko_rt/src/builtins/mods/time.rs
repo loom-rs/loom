@@ -1,13 +1,9 @@
 /// Imports
 use crate::{
-    arg, callable, class, error, expect, expect_as,
-    interpreter::Interpreter,
-    native_class, native_fun, native_method, realm,
-    refs::{MutRef, RealmRef, Ref},
-    rt::{
+    arg, builtin_module_class, callable, class, error, expect, expect_as, interpreter::Interpreter, native_class, native_fun, native_method, realm, refs::{MutRef, RealmRef, Ref}, rt::{
         realm::Realm,
         value::{Class, Method, Native, Value},
-    },
+    }
 };
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDateTime, Timelike, Utc};
 use geko_common::bug;
@@ -17,14 +13,7 @@ use std::{cell::RefCell, collections::HashMap};
 /// Helper: creates fresh `Time` with `NaiveTimeDelta`
 fn fresh_time(rt: &mut Interpreter, span: &Span, time: NaiveDateTime) -> Value {
     // Searching `Time` class
-    let class = match rt.builtins.modules.get("time") {
-        // Safety: borrow is temporal for the end of function
-        Some(module) => match module.borrow().env.borrow().lookup("Time") {
-            Some(Value::Class(ty)) => ty,
-            _ => error!(span, "corrupted module"),
-        },
-        None => error!(span, "corrupted module"),
-    };
+    let class = builtin_module_class!(rt, "time", "Time");
 
     // Creating `Time` instance
     match rt.call_class(

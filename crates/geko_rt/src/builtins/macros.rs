@@ -236,6 +236,21 @@ macro_rules! builtin_class {
     }};
 }
 
+/// Builtin module class macros
+#[macro_export]
+macro_rules! builtin_module_class {
+    ($rt:expr, $mod:expr, $class:expr) => {
+        match $rt.builtins.modules.get($mod) {
+            // Safety: borrow is temporal for the end of function
+            Some(module) => match module.borrow().env.borrow().lookup($class) {
+                Some(Value::Class(class)) => class,
+                _ => bug!(format!("no builtin `{}` found in `{}`", $class, $mod)),
+            },
+            None => bug!(format!("no builtin module `{}` found", $mod)),
+        }
+    };
+}
+
 /// Expect macros
 #[macro_export]
 macro_rules! expect {
