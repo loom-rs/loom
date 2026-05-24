@@ -159,12 +159,15 @@ fn to_string_method() -> Method {
         fun = |rt, span, values| {
             validate_cloned_list_arg(span, &values, |vec| {
                 Value::String(
-                    vec.iter()
-                        .map(|v| {
-                            to_string!(span, rt, v)
-                        })
-                        .collect::<Vec<_>>()
-                        .join(",")
+                    format!(
+                        "[{}]",
+                        vec.iter()
+                            .map(|v| {
+                                to_string!(span, rt, v)
+                            })
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    )
                 )
             })
         }

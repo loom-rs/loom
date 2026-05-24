@@ -129,16 +129,19 @@ fn to_string_method() -> Method {
         arity = 1,
         fun = |rt, span, values| {
             validate_cloned_dict_arg(span, &values, |map| Value::String(
-                map.iter()
-                    .map(|(k, v)| {
-                        format!(
-                            "{}: {}",
-                            to_string!(span, rt, k),
-                            to_string!(span, rt, v)
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .join(",")
+                format!(
+                    "{{{}}}",
+                    map.iter()
+                        .map(|(k, v)| {
+                            format!(
+                                "{}: {}",
+                                to_string!(span, rt, k),
+                                to_string!(span, rt, v)
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )
             ))
         }
     }

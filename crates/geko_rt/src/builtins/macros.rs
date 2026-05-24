@@ -302,7 +302,8 @@ macro_rules! arg_ref {
 macro_rules! to_string_value {
     ($span:expr, $rt:expr, $value:expr) => {
         if let Value::Instance(i) = $value {
-            match i.borrow().fields.get("to_string") {
+            // Note: borrow is temporal for this line
+            match { i.borrow().fields.get("to_string").cloned() } {
                 Some($crate::rt::value::Value::Callable(callable)) => {
                     match $rt.call($span, callable.clone(), vec![]) {
                         Ok(value) => value,
@@ -322,7 +323,8 @@ macro_rules! to_string_value {
 macro_rules! to_string {
     ($span:expr, $rt:expr, $value:expr) => {
         if let Value::Instance(i) = $value {
-            match i.borrow().fields.get("to_string") {
+            // Note: borrow is temporal for this line
+            match { i.borrow().fields.get("to_string").cloned() } {
                 Some($crate::rt::value::Value::Callable(callable)) => {
                     match $rt.call($span, callable.clone(), vec![]) {
                         Ok(value) => format!("{value:?}"),
