@@ -149,8 +149,8 @@ brackets
 ```
 use "a" # import `a` as `a`
 use "a" as b # import `a` as `b`
-use "a" for b # import `b` from `a` directly by `shallow copying` it
-use "a" for b, c # import multiple items
+use "a" pick b # import `b` from `a` directly by `shallow copying` it
+use "a" pick b, c # import multiple items
 ```
 
 `Geko` supports relative imports with `@/` prefix:

@@ -10,8 +10,8 @@ use geko_lex::token::Span;
 pub enum UseKind {
     // As `name`
     As(String),
-    // For `items`
-    For(Vec<String>),
+    // Pick `items`
+    Pick(Vec<String>),
     // For every item
     All,
     // Just import

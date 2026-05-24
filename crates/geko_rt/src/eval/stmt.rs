@@ -459,8 +459,8 @@ impl<'io> Interpreter<'io> {
         // Checking usage kind
         match kind {
             UseKind::As(name) => self.realm.borrow_mut().define(name, Value::Module(module)),
-            UseKind::For(items) => {
-                // Crawling items
+            UseKind::Pick(items) => {
+                // Getting items
                 let items: HashMap<String, Value> = {
                     let module = module.borrow();
                     let env = module.env.borrow();

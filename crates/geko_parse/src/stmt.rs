@@ -303,7 +303,7 @@ impl<'s> Parser<'s> {
         if self.check(TokenKind::As) {
             self.bump();
             UseKind::As(self.expect(TokenKind::Id).lexeme)
-        } else if self.check(TokenKind::For) {
+        } else if self.check(TokenKind::Pick) {
             self.bump();
             if self.check(TokenKind::Star) {
                 self.bump();
@@ -315,7 +315,7 @@ impl<'s> Parser<'s> {
                     self.bump();
                     items.push(self.expect(TokenKind::Id).lexeme);
                 }
-                UseKind::For(items)
+                UseKind::Pick(items)
             }
         } else {
             UseKind::Just

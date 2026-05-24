@@ -8,7 +8,7 @@ pub fn test_lex_1() {
 
 #[test]
 pub fn test_lex_2() {
-    assert_tokens!("use as for while class fn in if else let return continue break trait");
+    assert_tokens!("use as for while class fun in if else let return continue break trait pick");
 }
 
 #[test]

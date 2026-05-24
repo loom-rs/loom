@@ -23,6 +23,7 @@ pub enum TokenKind {
     As,          // `as` keyword
     Fun,         // `fun` keyword
     Trait,       // `trait` keyword
+    Pick,        // `pick` keyword
     Comma,       // ,
     Dot,         // .
     Lbrace,      // {

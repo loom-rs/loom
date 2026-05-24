@@ -299,6 +299,7 @@ impl<'s> Lexer<'s> {
             "fun" => TokenKind::Fun,
             "null" => TokenKind::Null,
             "trait" => TokenKind::Trait,
+            "pick" => TokenKind::Pick,
             _ => TokenKind::Id,
         }
     }
