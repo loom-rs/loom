@@ -40,65 +40,72 @@ expression: result
     },
     Token {
         span: Span(
-            23..25,
+            23..26,
         ),
-        kind: Id,
-        lexeme: "fn",
+        kind: Fun,
+        lexeme: "fun",
     },
     Token {
         span: Span(
-            26..28,
+            27..29,
         ),
         kind: In,
         lexeme: "in",
     },
     Token {
         span: Span(
-            29..31,
+            30..32,
         ),
         kind: If,
         lexeme: "if",
     },
     Token {
         span: Span(
-            32..36,
+            33..37,
         ),
         kind: Else,
         lexeme: "else",
     },
     Token {
         span: Span(
-            37..40,
+            38..41,
         ),
         kind: Id,
         lexeme: "let",
     },
     Token {
         span: Span(
-            41..47,
+            42..48,
         ),
         kind: Return,
         lexeme: "return",
     },
     Token {
         span: Span(
-            48..56,
+            49..57,
         ),
         kind: Continue,
         lexeme: "continue",
     },
     Token {
         span: Span(
-            57..62,
+            58..63,
         ),
         kind: Break,
         lexeme: "break",
     },
     Token {
         span: Span(
-            63..68,
+            64..69,
         ),
         kind: Trait,
         lexeme: "trait",
+    },
+    Token {
+        span: Span(
+            70..74,
+        ),
+        kind: Pick,
+        lexeme: "pick",
     },
 ]
