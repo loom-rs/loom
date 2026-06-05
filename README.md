@@ -84,6 +84,7 @@ sandwich.cook()
 - [x] `todo` builtin
 - [ ] `loop` keyword
 - [ ] `assert` keyword
+- [ ] error propagation `?` operator
 - [x] implement anonymous functions
 - [x] extend for loop to iterate over items of list
 - [x] implement dictionaries
