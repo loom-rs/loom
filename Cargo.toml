@@ -1,15 +1,10 @@
 [workspace]
 members = [
-    "crates/geko",
-    "crates/geko_ir",
-    "crates/geko_common",
-    "crates/geko_lex",
-    "crates/geko_parse",
-    "crates/geko_rt",
-    "crates/geko_sema",
-    "crates/geko_tests",
-    "crates/geko_wasm", 
-    "crates/geko_jit",
+    "geko/cli",
+    "geko/core",
+    "geko/wasm",
+    "common",
+    "dune",
 ]
 resolver = "3"
 
@@ -17,4 +12,3 @@ resolver = "3"
 opt-level = 3
 lto = "fat"
 codegen-units = 1
-panic = "abort"

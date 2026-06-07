@@ -1,0 +1,9 @@
+[package]
+name = "dune"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+common = { path = "../common" }
+miette = { git = "https://github.com/geko-rs/miette" }
+thiserror = "2.0.18"

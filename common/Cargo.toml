@@ -1,0 +1,9 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+miette = { git = "https://github.com/geko-rs/miette" }
+thiserror = "2.0.18"
+camino = "1.2.2"

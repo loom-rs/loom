@@ -1,5 +1,0 @@
----
-source: crates/geko_tests/src/lex.rs
-expression: result
----
-[]

@@ -1,0 +1,377 @@
+use common::bail;
+
+/// Imports
+use crate::{
+    ast::{AssignOp, Block, Class, Enum, Expr, Function, Stmt, Trait, TraitFunction, UseKind},
+    lex::token::TokenKind,
+    parse::{Parser, errors::ParseError},
+};
+
+/// Stmts parsing
+impl<'s> Parser<'s> {
+    /// Function parsing
+    fn function(&mut self) -> Function {
+        // Parsing function name
+        let start_span = self.peek().span.clone();
+        self.expect(TokenKind::Fun);
+        let name = self.expect(TokenKind::Id).lexeme;
+
+        // Parsing params
+        let params = self.params();
+
+        // Signature span
+        let sign_span = start_span.clone() + self.prev().span.clone();
+
+        // Parsing body
+        let block = self.block();
+        let end_span = self.prev().span.clone();
+
+        // Done
+        Function {
+            name,
+            span: start_span + end_span,
+            sign_span,
+            params,
+            block,
+        }
+    }
+
+    /// For Stmt parsing
+    fn for_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+
+        self.expect(TokenKind::For);
+        let var = self.expect(TokenKind::Id).lexeme;
+        self.expect(TokenKind::In);
+        let iterable = self.expr();
+        let block = self.block();
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::For {
+            span: start_span + end_span,
+            var,
+            iterable,
+            block,
+        }
+    }
+
+    /// While Stmt parsing
+    fn while_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+
+        self.expect(TokenKind::While);
+        let condition = self.expr();
+        let block = self.block();
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::While {
+            span: start_span + end_span,
+            condition,
+            block,
+        }
+    }
+
+    /// Else branch
+    fn else_branch(&mut self) -> Stmt {
+        self.expect(TokenKind::Else);
+        if self.check(TokenKind::If) {
+            self.if_stmt()
+        } else {
+            Stmt::Scope(Box::new(self.block()))
+        }
+    }
+
+    /// If Stmt parsing
+    fn if_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+
+        // Parsing if clause
+        self.expect(TokenKind::If);
+        let condition = self.expr();
+        let then = self.block();
+
+        // Parsing else clause
+        let else_ = if self.check(TokenKind::Else) {
+            Some(Box::new(self.else_branch()))
+        } else {
+            None
+        };
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::If {
+            span: start_span + end_span,
+            condition,
+            then,
+            else_,
+        }
+    }
+
+    /// Class declaration parsing
+    fn class_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+
+        // Parsing class name
+        self.expect(TokenKind::Class);
+        let name = self.expect(TokenKind::Id);
+        let name_span = start_span.clone() + name.span;
+        self.expect(TokenKind::Lbrace);
+
+        // Parsing methods
+        let mut methods = Vec::new();
+        while !self.check(TokenKind::Rbrace) {
+            methods.push(self.function())
+        }
+        self.expect(TokenKind::Rbrace);
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::Class(Class {
+            span: start_span + end_span,
+            name_span,
+            name: name.lexeme,
+            methods,
+        })
+    }
+
+    /// Enum declaration parsing
+    fn enum_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+
+        // Parsing enum name
+        self.expect(TokenKind::Enum);
+        let name = self.expect(TokenKind::Id);
+        let name_span = start_span.clone() + name.span;
+
+        // Parsing variants
+        let variants = self.sep_by(
+            TokenKind::Lbrace,
+            TokenKind::Rbrace,
+            TokenKind::Comma,
+            |p| p.expect(TokenKind::Id).lexeme,
+        );
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::Enum(Enum {
+            span: start_span + end_span,
+            name_span,
+            name: name.lexeme,
+            variants,
+        })
+    }
+
+    /// Trait function parsing
+    fn trait_function(&mut self) -> TraitFunction {
+        let start_span = self.peek().span.clone();
+
+        // Parsing trait signature
+        self.expect(TokenKind::Fun);
+        let name = self.expect(TokenKind::Id).lexeme;
+        let params = self.params();
+
+        let end_span = self.prev().span.clone();
+
+        TraitFunction {
+            span: start_span + end_span,
+            name,
+            params,
+        }
+    }
+
+    /// Trait declaration parsing
+    fn trait_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+
+        // Parsing trait name
+        self.expect(TokenKind::Trait);
+        let name = self.expect(TokenKind::Id).lexeme;
+
+        // Parsing functions
+        let functions = self.sep_by(
+            TokenKind::Lbrace,
+            TokenKind::Rbrace,
+            TokenKind::Comma,
+            |p| p.trait_function(),
+        );
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::Trait(Trait {
+            span: start_span + end_span,
+            name,
+            functions,
+        })
+    }
+
+    /// Assignment Stmt
+    fn assign_stmt(&mut self) -> Stmt {
+        // Parsing lhs
+        let start_span = self.peek().span.clone();
+        let variable = self.variable_expr();
+
+        // Checking for ssignment operator
+        let op = match self.current.clone().map(|it| it.kind) {
+            Some(TokenKind::PlusEq) => Some(AssignOp::Add),
+            Some(TokenKind::MinusEq) => Some(AssignOp::Sub),
+            Some(TokenKind::StarEq) => Some(AssignOp::Mul),
+            Some(TokenKind::SlashEq) => Some(AssignOp::Div),
+            Some(TokenKind::PercentEq) => Some(AssignOp::Mod),
+            Some(TokenKind::AmpersandEq) => Some(AssignOp::BitAnd),
+            Some(TokenKind::BarEq) => Some(AssignOp::BitOr),
+            Some(TokenKind::CaretEq) => Some(AssignOp::Xor),
+            Some(TokenKind::Eq) => Some(AssignOp::Assign),
+            Some(TokenKind::Walrus) => Some(AssignOp::Define),
+            Some(_) => None,
+            _ => return Stmt::Expr(variable),
+        };
+
+        // Checking assignment operator existence
+        match op {
+            // If operator found
+            Some(op) => {
+                // Bumping operator
+                self.bump();
+                let value = self.expr();
+                let end_span = self.prev().span.clone();
+
+                // Matching lhs
+                match variable {
+                    Expr::Variable { name, .. } => Stmt::Assign {
+                        span: start_span + end_span,
+                        name,
+                        op,
+                        value,
+                    },
+                    Expr::Field {
+                        name, container, ..
+                    } => Stmt::Set {
+                        span: start_span + end_span,
+                        container: *container,
+                        name,
+                        op,
+                        value,
+                    },
+                    _ => bail!(ParseError::InvalidUseOfAssignOp {
+                        src: self.source.clone(),
+                        first_span: (start_span + end_span).1.into()
+                    }),
+                }
+            }
+            // Else
+            None => Stmt::Expr(variable),
+        }
+    }
+
+    /// Break Stmt
+    fn break_stmt(&mut self) -> Stmt {
+        let span = self.expect(TokenKind::Break).span;
+        Stmt::Break(span)
+    }
+
+    /// Continue Stmt
+    fn continue_stmt(&mut self) -> Stmt {
+        let span = self.expect(TokenKind::Continue).span;
+        Stmt::Continue(span)
+    }
+
+    /// Return Stmt
+    fn return_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+        self.expect(TokenKind::Return);
+
+        if self.check(TokenKind::Rbrace) {
+            Stmt::Return {
+                span: start_span,
+                expr: None,
+            }
+        } else {
+            let value = self.expr();
+            let end_span = self.prev().span.clone();
+            Stmt::Return {
+                span: start_span + end_span,
+                expr: Some(value),
+            }
+        }
+    }
+
+    /// Use kind
+    fn use_kind(&mut self) -> UseKind {
+        if self.check(TokenKind::As) {
+            self.bump();
+            UseKind::As(self.expect(TokenKind::Id).lexeme)
+        } else if self.check(TokenKind::Pick) {
+            self.bump();
+            if self.check(TokenKind::Star) {
+                self.bump();
+                UseKind::All
+            } else {
+                let mut items = Vec::new();
+                items.push(self.expect(TokenKind::Id).lexeme);
+                while self.check(TokenKind::Comma) {
+                    self.bump();
+                    items.push(self.expect(TokenKind::Id).lexeme);
+                }
+                UseKind::Pick(items)
+            }
+        } else {
+            UseKind::Just
+        }
+    }
+
+    /// Use Stmt
+    fn use_stmt(&mut self) -> Stmt {
+        let start_span = self.peek().span.clone();
+        self.expect(TokenKind::Use);
+        let path = self.expect(TokenKind::String).lexeme;
+        let kind = self.use_kind();
+        let end_span = self.prev().span.clone();
+
+        Stmt::Use {
+            span: start_span + end_span,
+            path,
+            kind,
+        }
+    }
+
+    /// Satement parsing
+    pub fn stmt(&mut self) -> Stmt {
+        match self.peek().kind {
+            TokenKind::For => self.for_stmt(),
+            TokenKind::While => self.while_stmt(),
+            TokenKind::If => self.if_stmt(),
+            TokenKind::Class => self.class_stmt(),
+            TokenKind::Enum => self.enum_stmt(),
+            TokenKind::Trait => self.trait_stmt(),
+            TokenKind::Fun => Stmt::Function(self.function()),
+            TokenKind::Return => self.return_stmt(),
+            TokenKind::Continue => self.continue_stmt(),
+            TokenKind::Break => self.break_stmt(),
+            TokenKind::Id => self.assign_stmt(),
+            TokenKind::Use => self.use_stmt(),
+            _ => Stmt::Expr(self.expr()),
+        }
+    }
+
+    /// Block parsing
+    pub fn block(&mut self) -> Block {
+        // Preparing vector for Stmts
+        let mut stmts = Vec::new();
+
+        // Parsing Stmts
+        let start_span = self.peek().span.clone();
+        self.expect(TokenKind::Lbrace);
+        while !self.check(TokenKind::Rbrace) {
+            stmts.push(self.stmt());
+        }
+        self.expect(TokenKind::Rbrace);
+        let end_span = self.prev().span.clone();
+
+        Block {
+            span: start_span + end_span,
+            stmts,
+        }
+    }
+}

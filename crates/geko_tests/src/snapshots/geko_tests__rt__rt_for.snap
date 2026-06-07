@@ -1,5 +1,0 @@
----
-source: crates/geko_tests/src/rt.rs
-expression: result
----
-"48\n"
