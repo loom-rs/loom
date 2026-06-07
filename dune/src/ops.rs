@@ -1,5 +1,7 @@
 /// Imports
+use crate::refs::Ref;
 use common::span::Span;
+use std::collections::HashMap;
 
 /// Represents opcode value
 #[derive(Debug, Clone)]
@@ -8,6 +10,7 @@ pub enum OpcodeValue {
     Float(f64),
     Bool(bool),
     String(String),
+    Null,
 }
 
 /// Defines virtual machine operation code
@@ -34,28 +37,31 @@ pub enum Opcode {
     Band,
     Bor,
     Impls,
-    NotImpls,
     Neg,
     Bang,
     Jump(usize),
     JumpIf(usize),
     Return,
-    Call,
-    MakeFunction(Chunk),
-    MakeClass(usize),
-    MakeEnum(Vec<String>),
-    MakeTrait(Vec<(String, usize)>),
+    Call(usize),
+    Field(String),
     Import(String),
-    ImportPick(String, Vec<String>),
 }
 
 /// Defines chunk of opcodes
 #[derive(Debug, Clone)]
 pub struct Chunk {
     /// Chunk bytecode
-    code: Vec<Opcode>,
+    pub code: Vec<Opcode>,
 
     /// Source map:
     /// Pc -> Span
-    source: Vec<Span>,
+    pub source_map: Vec<Span>,
+}
+
+/// Chunk implementation
+impl Chunk {
+    /// Returns len of the chunk bytecode
+    pub fn len(&self) -> usize {
+        self.code.len()
+    }
 }

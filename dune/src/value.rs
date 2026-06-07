@@ -1,19 +1,17 @@
 /// Imports
+use crate::{
+    VirtualMachine,
+    frame::Scope,
+    ops::Chunk,
+    refs::{MutRef, Ref},
+};
+use common::span::Span;
 use std::{
     any::Any,
     collections::HashMap,
     fmt::{Debug, Display},
     hash::{Hash, Hasher},
     rc::Rc,
-};
-
-use common::span::Span;
-
-use crate::{
-    VirtualMachine,
-    frame::Scope,
-    ops::Chunk,
-    refs::{MutRef, Ref},
 };
 
 /// Native function value
@@ -32,7 +30,7 @@ pub struct Function {
     /// Function parameters
     pub params: Vec<String>,
     /// Function chunk
-    pub chunk: Chunk,
+    pub chunk: Ref<Chunk>,
 }
 
 /// Closure function

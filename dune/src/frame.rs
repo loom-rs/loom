@@ -2,8 +2,7 @@ use common::{bail, bug, span::Span};
 
 /// Imports
 use crate::{
-    errors::RuntimeError,
-    ops::Chunk,
+    ops::{Chunk, Opcode},
     refs::{MutRef, Ref},
     value::Value,
 };
@@ -61,13 +60,13 @@ impl Scope {
 /// Defines call frame
 pub struct Frame {
     /// Chunk of code
-    chunk: Ref<Chunk>,
+    pub chunk: Ref<Chunk>,
 
     /// Program counter
-    pc: usize,
+    pub pc: usize,
 
     /// Scope chain
-    scope: MutRef<Scope>,
+    pub scope: MutRef<Scope>,
 
     /// Operands stack
     stack: Vec<Value>,
@@ -95,6 +94,16 @@ impl Frame {
         }
     }
 
+    /// Creates new frame with passed scope
+    pub fn with_scope(chunk: Ref<Chunk>, scope: MutRef<Scope>) -> Self {
+        Self {
+            chunk,
+            pc: 0,
+            scope,
+            stack: Vec::new(),
+        }
+    }
+
     /// Pushes new operand to the stack
     pub fn push(&mut self, value: Value) {
         self.stack.push(value)
@@ -105,5 +114,33 @@ impl Frame {
         self.stack
             .pop()
             .unwrap_or_else(|| bug!("pop with empty stack"))
+    }
+
+    /// Jumps to target pc
+    pub fn jump(&mut self, pc: usize) {
+        self.pc = pc
+    }
+
+    /// Increments pc
+    pub fn inc_pc(&mut self) {
+        self.pc += 1
+    }
+
+    /// Returns opcode by current pc
+    pub fn op(&self) -> Opcode {
+        self.chunk
+            .code
+            .get(self.pc)
+            .cloned()
+            .unwrap_or_else(|| bug!("pc > chunk len"))
+    }
+
+    /// Returns span by current pc
+    pub fn span(&self) -> Span {
+        self.chunk
+            .source_map
+            .get(self.pc)
+            .cloned()
+            .unwrap_or_else(|| bug!("pc > source map len"))
     }
 }

@@ -1,9 +1,8 @@
 /// Imports
+use crate::value::Value;
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use std::sync::Arc;
 use thiserror::Error;
-
-use crate::value::Value;
 
 /// Unsafe `Send` + `Sync` implementations.
 unsafe impl Send for Value {}
