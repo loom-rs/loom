@@ -3,7 +3,7 @@ use crate::{
     VirtualMachine,
     errors::RuntimeError,
     frame::Scope,
-    ops::{Opcode, OpcodeValue},
+    ops::Opcode,
     refs::{MutRef, Ref},
     value::{
         Bound, Callable, Class, Closure, Instance, Method, Module, Native,
@@ -16,14 +16,8 @@ use std::{cell::RefCell, collections::HashMap};
 /// Implementation of the VM
 impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     /// Executes push op
-    fn op_push(&mut self, value: OpcodeValue) {
-        self.frame_mut().push(match value {
-            OpcodeValue::Int(i) => Value::Int(i),
-            OpcodeValue::Float(f) => Value::Float(f),
-            OpcodeValue::Bool(b) => Value::Bool(b),
-            OpcodeValue::String(s) => Value::String(s),
-            OpcodeValue::Null => Value::Null,
-        });
+    fn op_push(&mut self, value: Value) {
+        self.frame_mut().push(value);
     }
 
     /// Executes pop op
@@ -124,10 +118,10 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let lhs = frame.pop();
 
         let result = match (lhs, rhs) {
-            (Value::Int(a), Value::Int(b)) => Value::Int(a / b),
-            (Value::Int(a), Value::Float(b)) => Value::Float(a as f64 / b),
-            (Value::Float(a), Value::Int(b)) => Value::Float(a / b as f64),
-            (Value::Float(a), Value::Float(b)) => Value::Float(a / b),
+            (Value::Int(a), Value::Int(b)) if b > 0 => Value::Int(a / b),
+            (Value::Int(a), Value::Float(b)) if b > 0.0 => Value::Float(a as f64 / b),
+            (Value::Float(a), Value::Int(b)) if b > 0 => Value::Float(a / b as f64),
+            (Value::Float(a), Value::Float(b)) if b > 0.0 => Value::Float(a / b),
             (a, b) => bail!(RuntimeError::InvalidBinOp {
                 op: "/".into(),
                 a,
@@ -516,6 +510,12 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.frame_mut().push(value);
     }
 
+    /// Executes halt op
+    fn op_halt(&mut self) {
+        self.pop();
+        self.frame_mut().push(Value::Null);
+    }
+
     /// Checks params and arguments arity
     fn check_arity(&self, span: &Span, params: usize, args: usize) {
         // Checking arity
@@ -726,6 +726,46 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         frame.push(Self::access_field(&span, &field, container))
     }
 
+    /// Executes load op
+    fn op_load(&mut self, name: String) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+        let value = frame.scope.borrow().lookup(&name).unwrap_or_else(|| {
+            bail!(RuntimeError::UndefinedVariable {
+                name,
+                src: span.0,
+                span: span.1.into()
+            })
+        });
+        frame.push(value);
+    }
+
+    /// Executes store op
+    fn op_store(&mut self, name: String) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+        let value = frame.pop();
+
+        let mut scope = frame.scope.borrow_mut();
+        if scope.exists(&name) {
+            scope.insert(&name, value);
+        } else {
+            bail!(RuntimeError::UndefinedVariable {
+                name,
+                src: span.0,
+                span: span.1.into()
+            })
+        }
+    }
+
+    /// Executes define op
+    fn op_define(&mut self, name: String) {
+        let frame = self.frame_mut();
+        let value = frame.pop();
+        let mut scope = frame.scope.borrow_mut();
+        scope.insert(&name, value);
+    }
+
     /// Executes import op
     fn op_import(&mut self, id: String) {
         // Resolving module
@@ -789,10 +829,16 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::JumpIf(pc) => self.op_jump_if(pc),
                 // Return operation
                 Opcode::Return => self.op_return(),
+                // Halt operation
+                Opcode::Halt => self.op_halt(),
                 // Call operation
                 Opcode::Call(arity) => self.op_call(arity),
                 // Field access operation
                 Opcode::Field(field) => self.op_field(field),
+                // Load/store/define operations
+                Opcode::Load(name) => self.op_load(name),
+                Opcode::Store(name) => self.op_store(name),
+                Opcode::Define(name) => self.op_define(name),
                 // Import operations
                 Opcode::Import(id) => self.op_import(id),
             }

@@ -1,11 +1,10 @@
-use common::{bail, bug, span::Span};
-
 /// Imports
 use crate::{
     ops::{Chunk, Opcode},
     refs::{MutRef, Ref},
     value::Value,
 };
+use common::{bug, span::Span};
 use std::{cell::RefCell, collections::HashMap};
 
 /// Defines scope of variables

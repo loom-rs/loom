@@ -1,23 +1,12 @@
 /// Imports
-use crate::refs::Ref;
+use crate::value::Value;
 use common::span::Span;
-use std::collections::HashMap;
-
-/// Represents opcode value
-#[derive(Debug, Clone)]
-pub enum OpcodeValue {
-    Int(i64),
-    Float(f64),
-    Bool(bool),
-    String(String),
-    Null,
-}
 
 /// Defines virtual machine operation code
 #[derive(Debug, Clone)]
 pub enum Opcode {
     Nop,
-    Push(OpcodeValue),
+    Push(Value),
     Pop,
     Dup,
     Add,
@@ -42,6 +31,10 @@ pub enum Opcode {
     Jump(usize),
     JumpIf(usize),
     Return,
+    Halt,
+    Load(String),
+    Store(String),
+    Define(String),
     Call(usize),
     Field(String),
     Import(String),

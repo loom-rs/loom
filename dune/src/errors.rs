@@ -54,15 +54,6 @@ pub enum RuntimeError {
         #[label("here...")]
         span: SourceSpan,
     },
-    /// Zero division error
-    #[error("division by zero is invalid")]
-    #[diagnostic(code(rt::zero_division))]
-    ZeroDivision {
-        #[source_code]
-        src: Arc<NamedSource<String>>,
-        #[label("here...")]
-        span: SourceSpan,
-    },
     /// Couldn't resolve fields
     #[error("couldn't resolve fields in `{value}`")]
     #[diagnostic(code(rt::could_not_resolve_fields))]
@@ -83,32 +74,12 @@ pub enum RuntimeError {
         #[label("here...")]
         span: SourceSpan,
     },
-    /// Expected boolean value
-    #[error("expected bool value. got `{value}`")]
-    #[diagnostic(code(rt::expected_bool_value))]
-    ExpectedBool {
-        value: Value,
-        #[source_code]
-        src: Arc<NamedSource<String>>,
-        #[label("here...")]
-        span: SourceSpan,
-    },
     /// Incorrect arity
     #[error("incorrect arity. expected {params} params got {args} args")]
     #[diagnostic(code(rt::incorrect_arity))]
     IncorrectArity {
         params: usize,
         args: usize,
-        #[source_code]
-        src: Arc<NamedSource<String>>,
-        #[label("here...")]
-        span: SourceSpan,
-    },
-    /// Failed to find module
-    #[error("failed to find module `{path}`")]
-    #[diagnostic(code(rt::failed_to_find_module))]
-    FailedToFindModule {
-        path: String,
         #[source_code]
         src: Arc<NamedSource<String>>,
         #[label("here...")]
@@ -122,33 +93,6 @@ pub enum RuntimeError {
         #[source_code]
         src: Arc<NamedSource<String>>,
         #[label("bail occurred here...")]
-        span: SourceSpan,
-    },
-    /// Invalid range
-    #[error("couldn't create valid range with `{lhs}` and `{rhs}`")]
-    #[diagnostic(code(rt::invalid_range))]
-    InvalidRange {
-        src: Arc<NamedSource<String>>,
-        #[label("tried to create range here...")]
-        span: SourceSpan,
-        lhs: Value,
-        rhs: Value,
-    },
-    /// Invalid iterator
-    #[error("couldn't iterate over `{value}`")]
-    #[diagnostic(code(rt::invalid_iterator))]
-    InvalidIterator {
-        src: Arc<NamedSource<String>>,
-        #[label("tried to iterate here...")]
-        span: SourceSpan,
-        value: Value,
-    },
-    /// Corrupted iterator
-    #[error("couldn't iterate over corrupted iterator")]
-    #[diagnostic(code(rt::corrupted_iterator))]
-    CorruptedIterator {
-        src: Arc<NamedSource<String>>,
-        #[label("tried to iterate here...")]
         span: SourceSpan,
     },
 }
