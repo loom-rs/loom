@@ -27,6 +27,7 @@ dependencies = [
 name = "dune"
 version = "0.1.0"
 dependencies = [
+ "camino",
  "common",
  "miette",
  "thiserror",

@@ -34,16 +34,24 @@ pub struct VirtualMachine<'io, 'reg> {
 
     /// Modules registry
     pub(crate) modules: &'reg mut dyn ModulesRegistry,
+
+    /// Builtins scope
+    pub(crate) builtins: MutRef<Scope>,
 }
 
 /// VM implementation
 impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     /// Creates new VM
-    pub fn new(io: &'io dyn IO, modules: &'reg mut dyn ModulesRegistry) -> Self {
+    pub fn new(
+        io: &'io dyn IO,
+        modules: &'reg mut dyn ModulesRegistry,
+        builtins: MutRef<Scope>,
+    ) -> Self {
         Self {
             stack: Vec::new(),
             io,
             modules,
+            builtins,
         }
     }
 

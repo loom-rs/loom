@@ -1,0 +1,12 @@
+a := 0
+b := 1
+i := 2
+
+while i <= 70 {
+  c := a + b
+  a = b
+  b = c
+  i += 1
+}
+
+putln(str_of(b))

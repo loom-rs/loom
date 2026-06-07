@@ -513,7 +513,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     /// Executes halt op
     fn op_halt(&mut self) {
         self.pop();
-        self.frame_mut().push(Value::Null);
     }
 
     /// Checks params and arguments arity
@@ -728,16 +727,20 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
     /// Executes load op
     fn op_load(&mut self, name: String) {
-        let frame = self.frame_mut();
-        let span = frame.span();
-        let value = frame.scope.borrow().lookup(&name).unwrap_or_else(|| {
+        let value = if let Some(value) = self.frame_mut().scope.borrow().lookup(&name) {
+            value
+        } else if let Some(value) = self.builtins.borrow().lookup(&name) {
+            value
+        } else {
+            let span = self.frame().span();
             bail!(RuntimeError::UndefinedVariable {
                 name,
                 src: span.0,
                 span: span.1.into()
             })
-        });
-        frame.push(value);
+        };
+
+        self.frame_mut().push(value);
     }
 
     /// Executes store op
@@ -841,6 +844,10 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Define(name) => self.op_define(name),
                 // Import operations
                 Opcode::Import(id) => self.op_import(id),
+            }
+
+            if self.stack.len() > 0 {
+                self.frame_mut().inc_pc();
             }
         }
     }

@@ -11,10 +11,10 @@ use std::{cell::RefCell, collections::HashMap};
 #[derive(Default, Debug)]
 pub struct Scope {
     /// Variables map
-    variables: HashMap<String, Value>,
+    pub variables: HashMap<String, Value>,
 
     /// Enclosing scope
-    enclosing: Option<MutRef<Scope>>,
+    pub enclosing: Option<MutRef<Scope>>,
 }
 
 /// Scope implementation
