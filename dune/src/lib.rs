@@ -1,5 +1,5 @@
 /// Modules
-mod errors;
+pub mod errors;
 mod eval;
 mod frame;
 mod ops;
@@ -30,10 +30,10 @@ pub struct VirtualMachine<'io, 'reg> {
     pub(crate) stack: Vec<Frame>,
 
     /// IO
-    pub(crate) io: &'io dyn IO,
+    pub io: &'io dyn IO,
 
     /// Modules registry
-    pub(crate) modules: &'reg mut dyn ModulesRegistry,
+    pub modules: &'reg mut dyn ModulesRegistry,
 
     /// Builtins scope
     pub(crate) builtins: MutRef<Scope>,
@@ -76,7 +76,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
     /// Pushes new frame with enclosing scope
     pub fn push_with_enclosing(&mut self, chunk: Ref<Chunk>, enclosing: MutRef<Scope>) {
-        self.stack.push(Frame::with_scope(chunk, enclosing));
+        self.stack.push(Frame::with_enclosing(chunk, enclosing));
     }
 
     /// Pushes new frame with scope

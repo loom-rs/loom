@@ -394,7 +394,9 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
     /// Does class impls trait
     fn is_impls(span: &Span, lhs: Value, rhs: Value) -> bool {
+        // Mathing lhs and rhs
         match (lhs, rhs) {
+            // If lhs is an instance and rhs is a trait
             (Value::Instance(a), Value::Trait(b)) => {
                 // Iterating over trait functions
                 for func in &b.functions {
@@ -571,7 +573,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls closure
-    pub(crate) fn call_closure(&mut self, span: &Span, closure: Ref<Closure>, args: Vec<Value>) {
+    pub fn call_closure(&mut self, span: &Span, closure: Ref<Closure>, args: Vec<Value>) {
         // Checking arity
         self.check_arity(span, closure.function.params.len(), args.len());
 
@@ -591,7 +593,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls native function
-    pub(crate) fn call_native(&mut self, span: &Span, native: Ref<Native>, args: Vec<Value>) {
+    pub fn call_native(&mut self, span: &Span, native: Ref<Native>, args: Vec<Value>) {
         // Checking arity
         self.check_arity(span, native.arity, args.len());
 
@@ -603,12 +605,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls bound method
-    pub(crate) fn call_bound_method(
-        &mut self,
-        span: &Span,
-        bound: Ref<Bound>,
-        mut args: Vec<Value>,
-    ) {
+    pub fn call_bound_method(&mut self, span: &Span, bound: Ref<Bound>, mut args: Vec<Value>) {
         // Inserting `self` parameter
         args.insert(0, Value::Instance(bound.belongs_to.clone()));
 
@@ -620,7 +617,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls type and creates instance
-    pub(crate) fn call_class(&mut self, span: &Span, class: Ref<Class>, args: Vec<Value>) {
+    pub fn call_class(&mut self, span: &Span, class: Ref<Class>, args: Vec<Value>) {
         // Creating instance
         let instance = self.create_instance(class);
 
@@ -642,7 +639,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls callable
-    pub(crate) fn call(&mut self, span: &Span, callable: Callable, args: Vec<Value>) {
+    pub fn call(&mut self, span: &Span, callable: Callable, args: Vec<Value>) {
         match callable {
             Callable::Closure(closure) => self.call_closure(span, closure, args),
             Callable::Bound(bound) => self.call_bound_method(span, bound, args),
