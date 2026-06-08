@@ -2,9 +2,9 @@
 pub mod errors;
 mod eval;
 mod frame;
-mod ops;
-mod refs;
-mod value;
+pub mod ops;
+pub mod refs;
+pub mod value;
 
 /// Imports
 use crate::{

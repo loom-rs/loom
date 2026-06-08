@@ -7,3 +7,4 @@ edition = "2024"
 miette = { git = "https://github.com/geko-rs/miette" }
 thiserror = "2.0.18"
 common = { path = "../../common" }
+dune = { path = "../../dune" }

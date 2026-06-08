@@ -1,5 +1,5 @@
 /// Imports
-use crate::ast::{BinOp, Block, Expr, Lit, Stmt, UnaryOp};
+use crate::ast::{BinOp, Block, Expr, Lit, Stmt, UnOp};
 use crate::lex::token::TokenKind;
 use crate::parse::{Parser, errors::ParseError};
 use common::bail;
@@ -189,11 +189,11 @@ impl<'s> Parser<'s> {
             let op = self.bump();
             let value = self.unary_expr();
             let end_span = self.prev().span.clone();
-            return Expr::Unary {
+            return Expr::Un {
                 span: start_span.clone() + end_span,
                 op: match op.kind {
-                    TokenKind::Minus => UnaryOp::Neg,
-                    TokenKind::Bang => UnaryOp::Bang,
+                    TokenKind::Minus => UnOp::Neg,
+                    TokenKind::Bang => UnOp::Bang,
                     _ => unreachable!(),
                 },
                 value: Box::new(value),

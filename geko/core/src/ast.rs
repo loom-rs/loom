@@ -68,17 +68,17 @@ impl Display for BinOp {
 
 /// Unary operator
 #[derive(Debug, Clone, Copy)]
-pub enum UnaryOp {
+pub enum UnOp {
     Neg,  // -
     Bang, // !
 }
 
 /// Display implementation
-impl Display for UnaryOp {
+impl Display for UnOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UnaryOp::Neg => write!(f, "-"),
-            UnaryOp::Bang => write!(f, "!"),
+            UnOp::Neg => write!(f, "-"),
+            UnOp::Bang => write!(f, "!"),
         }
     }
 }
@@ -156,9 +156,9 @@ pub enum Expr {
         rhs: Box<Expr>,
     },
     // Unary operation
-    Unary {
+    Un {
         span: Span,
-        op: UnaryOp,
+        op: UnOp,
         value: Box<Expr>,
     },
     // Variable access

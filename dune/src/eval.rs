@@ -445,6 +445,18 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         frame.push(Value::Bool(result))
     }
 
+    /// Executes not impls op
+    fn op_not_impls(&mut self) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        let result = Self::is_impls(&span, lhs, rhs);
+        frame.push(Value::Bool(!result))
+    }
+
     /// Executes neg op
     fn op_neg(&mut self) {
         let frame = self.frame_mut();
@@ -706,7 +718,65 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 }),
             },
             // Otherwise, raising error
-            value => bail!(RuntimeError::CouldNotResolveFields {
+            value => bail!(RuntimeError::CouldNotLookupField {
+                src: span.0.clone(),
+                span: span.1.clone().into(),
+                value
+            }),
+        }
+    }
+
+    /// Performs field set
+    pub(crate) fn set_field(span: &Span, name: &str, container: Value, value: Value) {
+        // Matching container
+        match container {
+            // Module field access
+            Value::Module(m) => {
+                if m.borrow().scope.borrow().exists(name) {
+                    m.borrow().scope.borrow_mut().insert(name, value);
+                } else {
+                    bail!(RuntimeError::UndefinedField {
+                        src: span.0.clone(),
+                        span: span.1.clone().into(),
+                        name: name.to_string()
+                    })
+                }
+            }
+            // Instance field access
+            Value::Instance(i) => {
+                if i.borrow().fields.contains_key(name) {
+                    i.borrow_mut().fields.insert(name.into(), value);
+                } else {
+                    bail!(RuntimeError::UndefinedField {
+                        src: span.0.clone(),
+                        span: span.1.clone().into(),
+                        name: name.to_string()
+                    })
+                }
+            }
+            // Otherwise, raising error
+            value => bail!(RuntimeError::CouldNotAssignField {
+                src: span.0.clone(),
+                span: span.1.clone().into(),
+                value
+            }),
+        }
+    }
+
+    /// Performs field define
+    pub(crate) fn define_field(span: &Span, name: &str, container: Value, value: Value) {
+        // Matching container
+        match container {
+            // Module field access
+            Value::Module(m) => {
+                m.borrow().scope.borrow_mut().insert(name, value);
+            }
+            // Instance field access
+            Value::Instance(i) => {
+                i.borrow_mut().fields.insert(name.into(), value);
+            }
+            // Otherwise, raising error
+            value => bail!(RuntimeError::CouldNotDefineField {
                 src: span.0.clone(),
                 span: span.1.clone().into(),
                 value
@@ -715,11 +785,33 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Executes field op
-    fn op_field(&mut self, field: String) {
+    fn op_load_field(&mut self, field: String) {
         let frame = self.frame_mut();
         let span = frame.span();
         let container = frame.pop();
         frame.push(Self::access_field(&span, &field, container))
+    }
+
+    /// Executes store field op
+    fn op_store_field(&mut self, field: String) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+
+        let value = frame.pop();
+        let container = frame.pop();
+
+        Self::set_field(&span, &field, container, value)
+    }
+
+    /// Executes define field op
+    fn op_define_field(&mut self, field: String) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+
+        let value = frame.pop();
+        let container = frame.pop();
+
+        Self::define_field(&span, &field, container, value)
     }
 
     /// Executes load op
@@ -821,6 +913,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Bor => self.op_bor(),
                 // Trait operations
                 Opcode::Impls => self.op_impls(),
+                Opcode::NotImpls => self.op_not_impls(),
                 // Unary operations
                 Opcode::Neg => self.op_neg(),
                 Opcode::Bang => self.op_bang(),
@@ -833,8 +926,10 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Halt => self.op_halt(),
                 // Call operation
                 Opcode::Call(arity) => self.op_call(arity),
-                // Field access operation
-                Opcode::Field(field) => self.op_field(field),
+                // Field operations
+                Opcode::LoadField(field) => self.op_load_field(field),
+                Opcode::StoreField(field) => self.op_store_field(field),
+                Opcode::DefineField(field) => self.op_define_field(field),
                 // Load/store/define operations
                 Opcode::Load(name) => self.op_load(name),
                 Opcode::Store(name) => self.op_store(name),

@@ -26,6 +26,7 @@ pub enum Opcode {
     Band,
     Bor,
     Impls,
+    NotImpls,
     Neg,
     Bang,
     Jump(usize),
@@ -36,12 +37,14 @@ pub enum Opcode {
     Store(String),
     Define(String),
     Call(usize),
-    Field(String),
+    LoadField(String),
+    StoreField(String),
+    DefineField(String),
     Import(String),
 }
 
 /// Defines chunk of opcodes
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Chunk {
     /// Chunk bytecode
     pub code: Vec<Opcode>,
@@ -56,5 +59,17 @@ impl Chunk {
     /// Returns len of the chunk bytecode
     pub fn len(&self) -> usize {
         self.code.len()
+    }
+
+    /// Inserts new opcode and returns its index
+    pub fn insert(&mut self, span: Span, op: Opcode) -> usize {
+        self.source_map.push(span);
+        self.code.push(op);
+        self.code.len() - 1
+    }
+
+    /// Patches opcode at specified index
+    pub fn patch(&mut self, idx: usize, op: Opcode) {
+        self.code[idx] = op
     }
 }

@@ -55,13 +55,33 @@ pub enum RuntimeError {
         span: SourceSpan,
     },
     /// Couldn't resolve fields
-    #[error("couldn't resolve fields in `{value}`")]
-    #[diagnostic(code(rt::could_not_resolve_fields))]
-    CouldNotResolveFields {
+    #[error("`{value}` has no fields")]
+    #[diagnostic(code(rt::could_not_lookup_field))]
+    CouldNotLookupField {
         value: Value,
         #[source_code]
         src: Arc<NamedSource<String>>,
-        #[label("here...")]
+        #[label("lookup here...")]
+        span: SourceSpan,
+    },
+    /// Couldn't assign field
+    #[error("couldn't assign field in `{value}`")]
+    #[diagnostic(code(rt::could_not_assign_field))]
+    CouldNotAssignField {
+        value: Value,
+        #[source_code]
+        src: Arc<NamedSource<String>>,
+        #[label("assign here...")]
+        span: SourceSpan,
+    },
+    /// Couldn't define field
+    #[error("couldn't define field in `{value}`")]
+    #[diagnostic(code(rt::could_not_define_field))]
+    CouldNotDefineField {
+        value: Value,
+        #[source_code]
+        src: Arc<NamedSource<String>>,
+        #[label("define here...")]
         span: SourceSpan,
     },
     /// Couldn't call a value

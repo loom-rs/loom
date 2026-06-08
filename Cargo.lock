@@ -42,6 +42,7 @@ name = "geko-core"
 version = "0.1.0"
 dependencies = [
  "common",
+ "dune",
  "miette",
  "thiserror",
 ]

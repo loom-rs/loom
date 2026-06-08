@@ -151,7 +151,7 @@ impl Analyzer {
                 self.analyze_expr(lhs);
                 self.analyze_expr(rhs);
             }
-            Expr::Unary { value, .. } => self.analyze_expr(value),
+            Expr::Un { value, .. } => self.analyze_expr(value),
             // Analyzing field container
             Expr::Field { container, .. } => self.analyze_expr(container),
             // Analyzing arguments and callee
