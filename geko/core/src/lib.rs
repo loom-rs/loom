@@ -9,7 +9,7 @@ pub mod sema;
 use crate::{codegen::CodeGenerator, lex::Lexer, parse::Parser, sema::Analyzer};
 use common::io::IO;
 use dune::{
-    ModulesRegistry, VirtualMachine,
+    ModuleRegistry, VirtualMachine,
     frame::Scope,
     ops::Chunk,
     refs::{MutRef, Ref},
@@ -38,7 +38,7 @@ pub fn run(
     source: Arc<NamedSource<String>>,
     code: &str,
     io: &dyn IO,
-    modules: &mut dyn ModulesRegistry,
+    modules: &mut dyn ModuleRegistry,
     builtins: MutRef<Scope>,
 ) {
     // Parsing program
@@ -58,4 +58,6 @@ pub fn run(
     let mut vm = VirtualMachine::new(io, modules, builtins);
     vm.push(chunk);
     vm.exec();
+
+    println!("{:?}", vm.frame())
 }

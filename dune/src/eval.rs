@@ -545,11 +545,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.frame_mut().push(value);
     }
 
-    /// Executes halt op
-    fn op_halt(&mut self) {
-        self.pop();
-    }
-
     /// Checks params and arguments arity
     fn check_arity(&self, span: &Span, params: usize, args: usize) {
         // Checking arity
@@ -880,9 +875,11 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Executes import op
-    fn op_import(&mut self, id: String) {
+    fn op_import(&mut self, path: String) {
+        let span = self.frame().span();
+
         // Resolving module
-        let chunk = self.modules.resolve(&id);
+        let (id, chunk) = self.modules.resolve(span, &path);
 
         // Preparing module scope
         let scope = MutRef::new(RefCell::new(Scope::default()));
@@ -902,8 +899,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
     /// Runs vm execution loop
     pub fn exec(&mut self) {
-        while !self.stack.is_empty() {
-            match self.frame().op() {
+        while let Some(op) = self.frame().op() {
+            match op {
                 // Does nothing
                 Opcode::Nop => {}
                 // Pushes value onto the stack
@@ -944,8 +941,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::JumpIfFalse(label) => self.op_jump_if_false(label),
                 // Return operation
                 Opcode::Return => self.op_return(),
-                // Halt operation
-                Opcode::Halt => self.op_halt(),
                 // Call operation
                 Opcode::Call(arity) => self.op_call(arity),
                 // Field operations
@@ -957,7 +952,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Store(name) => self.op_store(name),
                 Opcode::Define(name) => self.op_define(name),
                 // Import operations
-                Opcode::Import(id) => self.op_import(id),
+                Opcode::Import(path) => self.op_import(path),
             }
 
             if self.stack.len() > 0 {

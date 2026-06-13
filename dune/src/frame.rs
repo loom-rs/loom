@@ -57,6 +57,7 @@ impl Scope {
 }
 
 /// Defines call frame
+#[derive(Debug)]
 pub struct Frame {
     /// Chunk of code
     pub chunk: Ref<Chunk>,
@@ -131,12 +132,8 @@ impl Frame {
     }
 
     /// Returns opcode by current pc
-    pub fn op(&self) -> Opcode {
-        self.chunk
-            .code
-            .get(self.pc)
-            .cloned()
-            .unwrap_or_else(|| bug!("pc > chunk len"))
+    pub fn op(&self) -> Option<Opcode> {
+        self.chunk.code.get(self.pc).cloned()
     }
 
     /// Returns span by current pc

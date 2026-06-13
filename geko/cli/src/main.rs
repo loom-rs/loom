@@ -1,15 +1,16 @@
 /// Modules
 mod io;
-
-use std::sync::Arc;
+mod modules;
 
 /// Imports
-use crate::io::CliIO;
+use crate::{io::CliIO, modules::CliModuleRegistry};
 use camino::Utf8PathBuf;
 use clap::Parser;
 use common::io::IO;
-use geko_core::emit;
+use dune::{frame::Scope, refs::MutRef};
+use geko_core::run;
 use miette::NamedSource;
+use std::{cell::RefCell, sync::Arc};
 
 /// Arguments parser
 #[derive(Parser, Debug)]
@@ -42,8 +43,10 @@ fn main() {
     // Parsing arguments
     let path = Args::parse().path;
 
-    // Preparing IO
+    // Preparing IO, Modules Registry and Builtins
     let io = CliIO;
+    let mut modules = CliModuleRegistry::new(&io);
+    let builtins = MutRef::new(RefCell::new(Scope::default()));
 
     // Preparing module name
     let name = io.canonicalize(&path).unwrap().to_string();
@@ -51,9 +54,7 @@ fn main() {
     // Interpreting
     let code = io.read(&path);
 
-    // Generating vm instructions
+    // Generating and running vm instructions
     let source = Arc::new(NamedSource::new(name, code.clone()));
-    let chunk = emit(source, &code);
-
-    println!("{chunk:?}")
+    run(source, &code, &io, &mut modules, builtins);
 }

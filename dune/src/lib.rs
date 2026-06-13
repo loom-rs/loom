@@ -13,12 +13,12 @@ use crate::{
     refs::{MutRef, Ref},
     value::Module,
 };
-use common::{bug, io::IO};
+use common::{bug, io::IO, span::Span};
 
-/// Defines modules registry trait
-pub trait ModulesRegistry {
+/// Defines module registry trait
+pub trait ModuleRegistry {
     /// Resolves module
-    fn resolve(&self, id: &str) -> Ref<Chunk>;
+    fn resolve(&self, span: Span, path: &str) -> (String, Ref<Chunk>);
 
     /// Inserts module
     fn insert(&mut self, id: &str, module: MutRef<Module>);
@@ -32,8 +32,8 @@ pub struct VirtualMachine<'io, 'reg> {
     /// IO
     pub io: &'io dyn IO,
 
-    /// Modules registry
-    pub modules: &'reg mut dyn ModulesRegistry,
+    /// Module registry
+    pub modules: &'reg mut dyn ModuleRegistry,
 
     /// Builtins scope
     pub(crate) builtins: MutRef<Scope>,
@@ -44,7 +44,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     /// Creates new VM
     pub fn new(
         io: &'io dyn IO,
-        modules: &'reg mut dyn ModulesRegistry,
+        modules: &'reg mut dyn ModuleRegistry,
         builtins: MutRef<Scope>,
     ) -> Self {
         Self {

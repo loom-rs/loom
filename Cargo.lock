@@ -191,8 +191,10 @@ dependencies = [
  "camino",
  "clap",
  "common",
+ "dune",
  "geko-core",
  "miette",
+ "thiserror",
 ]
 
 [[package]]

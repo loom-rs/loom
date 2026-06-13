@@ -9,3 +9,5 @@ clap = { version = "4.6.1", features = ["derive"] }
 miette = { git = "https://github.com/geko-rs/miette", features = ["fancy"] }
 common = { path = "../../common" }
 geko-core = { path = "../core" }
+dune = { path = "../../dune" }
+thiserror = "2.0.18"
