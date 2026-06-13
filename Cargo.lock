@@ -193,6 +193,7 @@ dependencies = [
  "common",
  "dune",
  "geko-core",
+ "geko-std",
  "miette",
  "thiserror",
 ]
@@ -205,6 +206,15 @@ dependencies = [
  "dune",
  "miette",
  "thiserror",
+]
+
+[[package]]
+name = "geko-std"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "dune",
+ "miette",
 ]
 
 [[package]]

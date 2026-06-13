@@ -10,4 +10,5 @@ miette = { git = "https://github.com/geko-rs/miette", features = ["fancy"] }
 common = { path = "../../common" }
 geko-core = { path = "../core" }
 dune = { path = "../../dune" }
+geko-std = { path = "../std" }
 thiserror = "2.0.18"

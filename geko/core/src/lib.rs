@@ -58,6 +58,4 @@ pub fn run(
     let mut vm = VirtualMachine::new(io, modules, builtins);
     vm.push(chunk);
     vm.exec();
-
-    println!("{:?}", vm.frame())
 }

@@ -1,6 +1,6 @@
 /// Modules
 pub mod errors;
-mod eval;
+pub mod eval;
 pub mod frame;
 pub mod ops;
 pub mod refs;
@@ -36,7 +36,7 @@ pub struct VirtualMachine<'io, 'reg> {
     pub modules: &'reg mut dyn ModuleRegistry,
 
     /// Builtins scope
-    pub(crate) builtins: MutRef<Scope>,
+    pub builtins: MutRef<Scope>,
 }
 
 /// VM implementation

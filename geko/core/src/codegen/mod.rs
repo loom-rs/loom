@@ -440,7 +440,7 @@ impl CodeGenerator {
             Stmt::Return { span, expr } => todo!(),
             Stmt::Continue(span) => todo!(),
             Stmt::Break(span) => todo!(),
-            Stmt::Expr(expr) => todo!(),
+            Stmt::Expr(expr) => self.gen_expr(expr),
             Stmt::Block(block) => todo!(),
             Stmt::Use { span, path, kind } => todo!(),
         }

@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "geko/std",
     "geko/cli",
     "geko/core",
     "geko/wasm",

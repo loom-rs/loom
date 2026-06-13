@@ -1,9 +1,9 @@
 [package]
-name = "common"
+name = "geko-std"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+dune = { path = "../../dune"}
+common = { path = "../../common"}
 miette = { git = "https://github.com/geko-rs/miette", features = ["fancy"] }
-thiserror = "2.0.18"
-camino = "1.2.2"

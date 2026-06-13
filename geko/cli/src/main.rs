@@ -7,10 +7,10 @@ use crate::{io::CliIO, modules::CliModuleRegistry};
 use camino::Utf8PathBuf;
 use clap::Parser;
 use common::io::IO;
-use dune::{frame::Scope, refs::MutRef};
 use geko_core::run;
+use geko_std::builtins;
 use miette::NamedSource;
-use std::{cell::RefCell, sync::Arc};
+use std::sync::Arc;
 
 /// Arguments parser
 #[derive(Parser, Debug)]
@@ -46,7 +46,7 @@ fn main() {
     // Preparing IO, Modules Registry and Builtins
     let io = CliIO;
     let mut modules = CliModuleRegistry::new(&io);
-    let builtins = MutRef::new(RefCell::new(Scope::default()));
+    let builtins = builtins::provide();
 
     // Preparing module name
     let name = io.canonicalize(&path).unwrap().to_string();
