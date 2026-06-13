@@ -1,7 +1,7 @@
 /// Modules
 pub mod errors;
 mod eval;
-mod frame;
+pub mod frame;
 pub mod ops;
 pub mod refs;
 pub mod value;

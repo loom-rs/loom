@@ -1,10 +1,8 @@
-use common::bail;
-
 /// Imports
 use crate::{
-    ast::{AssignOp, Block, Class, Enum, Expr, Function, Stmt, Trait, TraitFunction, UseKind},
+    ast::{AssignOp, Block, Class, Enum, Function, Stmt, Trait, TraitFunction, UseKind},
     lex::token::TokenKind,
-    parse::{Parser, errors::ParseError},
+    parse::Parser,
 };
 
 /// Stmts parsing
@@ -210,7 +208,7 @@ impl<'s> Parser<'s> {
     fn assign_stmt(&mut self) -> Stmt {
         // Parsing lhs
         let start_span = self.peek().span.clone();
-        let variable = self.variable_expr();
+        let lhs = self.variable_expr();
 
         // Checking for ssignment operator
         let op = match self.current.clone().map(|it| it.kind) {
@@ -225,7 +223,7 @@ impl<'s> Parser<'s> {
             Some(TokenKind::Eq) => Some(AssignOp::Assign),
             Some(TokenKind::Walrus) => Some(AssignOp::Define),
             Some(_) => None,
-            _ => return Stmt::Expr(variable),
+            _ => return Stmt::Expr(lhs),
         };
 
         // Checking assignment operator existence
@@ -234,34 +232,20 @@ impl<'s> Parser<'s> {
             Some(op) => {
                 // Bumping operator
                 self.bump();
-                let value = self.expr();
+
+                // Parsing rhs
+                let rhs = self.expr();
                 let end_span = self.prev().span.clone();
 
-                // Matching lhs
-                match variable {
-                    Expr::Variable { name, .. } => Stmt::Assign {
-                        span: start_span + end_span,
-                        name,
-                        op,
-                        value,
-                    },
-                    Expr::Field {
-                        name, container, ..
-                    } => Stmt::Set {
-                        span: start_span + end_span,
-                        container: *container,
-                        name,
-                        op,
-                        value,
-                    },
-                    _ => bail!(ParseError::InvalidUseOfAssignOp {
-                        src: self.source.clone(),
-                        first_span: (start_span + end_span).1.into()
-                    }),
+                Stmt::Assign {
+                    span: start_span + end_span,
+                    what: lhs,
+                    op,
+                    value: rhs,
                 }
             }
             // Else
-            None => Stmt::Expr(variable),
+            None => Stmt::Expr(lhs),
         }
     }
 

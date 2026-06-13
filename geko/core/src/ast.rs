@@ -250,15 +250,7 @@ pub enum Stmt {
     // Assignment declaration
     Assign {
         span: Span,
-        name: String,
-        op: AssignOp,
-        value: Expr,
-    },
-    // Field assignment declaration
-    Set {
-        span: Span,
-        container: Expr,
-        name: String,
+        what: Expr,
         op: AssignOp,
         value: Expr,
     },

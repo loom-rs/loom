@@ -54,7 +54,8 @@ pub struct Chunk {
     /// Chunk bytecode
     pub code: Vec<Opcode>,
 
-    /// Chunk labels
+    /// Chunk labels map:
+    /// Id -> Pc
     pub labels: Vec<usize>,
 
     /// Source map:
@@ -88,7 +89,7 @@ impl Chunk {
         Label(self.labels.len() - 1)
     }
 
-    /// Patches label at specified index
+    /// Patches specified label with new pc
     pub fn patch_label(&mut self, label: Label, pc: usize) {
         self.labels[label.0] = pc
     }

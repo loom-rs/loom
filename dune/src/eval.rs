@@ -900,7 +900,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.push_with_scope(chunk, scope);
     }
 
-    /// Executes chunk
+    /// Runs vm execution loop
     pub fn exec(&mut self) {
         while !self.stack.is_empty() {
             match self.frame().op() {

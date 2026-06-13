@@ -1,12 +1,11 @@
-use common::{bug, span::Span};
 /// Imports
+use crate::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
+use common::{bug, span::Span};
 use dune::{
     ops::{Chunk, Label, Opcode},
     refs::Ref,
     value::Value,
 };
-
-use crate::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 
 /// Defines loop labels information
 pub struct LoopLabels {
@@ -18,6 +17,7 @@ pub struct LoopLabels {
 }
 
 /// Defines bytecode generator
+#[derive(Default)]
 pub struct CodeGenerator {
     /// Chunks stack
     chunks: Vec<Chunk>,
@@ -239,8 +239,8 @@ impl CodeGenerator {
         self.chunk().patch_label(end_label, end_pc);
     }
 
-    /// Performs generation of assign
-    pub fn gen_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
+    /// Performs generation of variable assign
+    pub fn gen_variable_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
         match op {
             AssignOp::Define => {
                 self.gen_expr(value);
@@ -309,8 +309,8 @@ impl CodeGenerator {
         }
     }
 
-    /// Performs generation of set
-    pub fn gen_set(
+    /// Performs generation of field assign
+    pub fn gen_field_assign(
         &mut self,
         span: Span,
         container: Expr,
@@ -395,6 +395,18 @@ impl CodeGenerator {
         }
     }
 
+    /// Performs generation of assign
+    pub fn gen_assign(&mut self, span: Span, what: Expr, op: AssignOp, value: Expr) {
+        // Matching lhs
+        match what {
+            Expr::Variable { name, .. } => self.gen_variable_assign(span, name, op, value),
+            Expr::Field {
+                name, container, ..
+            } => self.gen_field_assign(span, *container, name, op, value),
+            _ => bug!("invalid assign lhs"),
+        }
+    }
+
     /// Performs generation of a statement
     pub fn gen_stmt(&mut self, stmt: Stmt) {
         match stmt {
@@ -421,17 +433,10 @@ impl CodeGenerator {
             Stmt::Function(function) => todo!(),
             Stmt::Assign {
                 span,
-                name,
+                what,
                 op,
                 value,
-            } => self.gen_assign(span, name, op, value),
-            Stmt::Set {
-                span,
-                container,
-                name,
-                op,
-                value,
-            } => self.gen_set(span, container, name, op, value),
+            } => self.gen_assign(span, what, op, value),
             Stmt::Return { span, expr } => todo!(),
             Stmt::Continue(span) => todo!(),
             Stmt::Break(span) => todo!(),

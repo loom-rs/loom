@@ -42,16 +42,4 @@ pub enum ParseError {
         #[label("while parsing that...")]
         span: SourceSpan,
     },
-    /// Invalid usage of assignment operator
-    #[error("invalid use of assignment operator.")]
-    #[diagnostic(
-        code(lex::invalid_use_of_assignment_op),
-        help("assignment op-s can be used only with variable expressions.")
-    )]
-    InvalidUseOfAssignOp {
-        #[source_code]
-        src: Arc<NamedSource<String>>,
-        #[label("variable expression was expected.")]
-        first_span: SourceSpan,
-    },
 }

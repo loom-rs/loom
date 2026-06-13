@@ -33,4 +33,13 @@ pub enum SemaError {
         #[label("this `return` statement is invalid.")]
         span: SourceSpan,
     },
+    /// Invalid assign
+    #[error("invalid assign left-hand side of assign.")]
+    #[diagnostic(code(lex::invalid_assign_lhs))]
+    InvalidAssignLhs {
+        #[source_code]
+        src: Arc<NamedSource<String>>,
+        #[label("variable or field expression was expected.")]
+        span: SourceSpan,
+    },
 }

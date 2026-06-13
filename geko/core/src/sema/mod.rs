@@ -1,13 +1,12 @@
 /// Modules
 mod errors;
 
-use common::bail;
-
 /// Imports
 use crate::{
     ast::{Block, Expr, Function, Stmt},
     sema::errors::SemaError,
 };
+use common::bail;
 
 /// Defines scope kind for semantic analysis
 pub enum ScopeKind {
@@ -125,14 +124,20 @@ impl Analyzer {
                     })
                 }
             }
-            // Analyzing assignment statements
-            Stmt::Assign { value, .. } => {
-                self.analyze_expr(value);
-            }
-            Stmt::Set {
-                container, value, ..
+            // Analyzing assignment statement
+            Stmt::Assign {
+                span, what, value, ..
             } => {
-                self.analyze_expr(container);
+                // Matching lhs
+                if !matches!(what, Expr::Variable { .. } | Expr::Field { .. }) {
+                    bail!(SemaError::InvalidAssignLhs {
+                        src: span.0.clone(),
+                        span: span.1.clone().into()
+                    })
+                }
+
+                // Analyzing expressions
+                self.analyze_expr(what);
                 self.analyze_expr(value);
             }
             // Analyzing expr statement
