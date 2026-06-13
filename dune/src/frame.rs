@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    ops::{Chunk, Opcode},
+    ops::{Chunk, Label, Opcode},
     refs::{MutRef, Ref},
     value::Value,
 };
@@ -116,13 +116,18 @@ impl Frame {
     }
 
     /// Jumps to target pc
-    pub fn jump(&mut self, pc: usize) {
+    pub fn jump_pc(&mut self, pc: usize) {
         self.pc = pc
     }
 
     /// Increments pc
     pub fn inc_pc(&mut self) {
         self.pc += 1
+    }
+
+    /// Returns pc of label
+    pub fn pc_of_label(&mut self, label: Label) -> usize {
+        self.chunk.pc_of_label(label)
     }
 
     /// Returns opcode by current pc

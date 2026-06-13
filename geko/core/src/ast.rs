@@ -175,8 +175,8 @@ pub enum Expr {
     // Call expression
     Call {
         span: Span,
+        callee: Box<Expr>,
         args: Vec<Expr>,
-        what: Box<Expr>,
     },
     /// List expression
     List {
@@ -274,7 +274,7 @@ pub enum Stmt {
     // Expr
     Expr(Expr),
     // Scope block
-    Scope(Box<Block>),
+    Block(Box<Block>),
     // Use statement
     Use {
         span: Span,

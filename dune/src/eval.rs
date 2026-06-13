@@ -3,7 +3,7 @@ use crate::{
     VirtualMachine,
     errors::RuntimeError,
     frame::Scope,
-    ops::Opcode,
+    ops::{Label, Opcode},
     refs::{MutRef, Ref},
     value::{
         Bound, Callable, Class, Closure, Instance, Method, Module, Native,
@@ -497,12 +497,15 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Executes jump op
-    fn op_jump(&mut self, pc: usize) {
-        self.frame_mut().jump(pc);
+    fn op_jump(&mut self, label: Label) {
+        let frame = self.frame_mut();
+        let pc = frame.pc_of_label(label);
+
+        frame.jump_pc(pc);
     }
 
-    /// Executes jump if op
-    fn op_jump_if(&mut self, pc: usize) {
+    /// Executes jump if true op
+    fn op_jump_if_true(&mut self, label: Label) {
         let frame = self.frame_mut();
         let value = frame.pop();
 
@@ -513,7 +516,25 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         };
 
         if result {
-            frame.jump(pc);
+            let pc = frame.pc_of_label(label);
+            frame.jump_pc(pc);
+        }
+    }
+
+    /// Executes jump if false op
+    fn op_jump_if_false(&mut self, label: Label) {
+        let frame = self.frame_mut();
+        let value = frame.pop();
+
+        let result = if let Value::Bool(a) = value {
+            a
+        } else {
+            bug!("jump if with non-bool value")
+        };
+
+        if !result {
+            let pc = frame.pc_of_label(label);
+            frame.jump_pc(pc);
         }
     }
 
@@ -918,8 +939,9 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Neg => self.op_neg(),
                 Opcode::Bang => self.op_bang(),
                 // Jump operations
-                Opcode::Jump(pc) => self.op_jump(pc),
-                Opcode::JumpIf(pc) => self.op_jump_if(pc),
+                Opcode::Jump(label) => self.op_jump(label),
+                Opcode::JumpIfTrue(label) => self.op_jump_if_true(label),
+                Opcode::JumpIfFalse(label) => self.op_jump_if_false(label),
                 // Return operation
                 Opcode::Return => self.op_return(),
                 // Halt operation

@@ -29,8 +29,9 @@ pub enum Opcode {
     NotImpls,
     Neg,
     Bang,
-    Jump(usize),
-    JumpIf(usize),
+    Jump(Label),
+    JumpIfTrue(Label),
+    JumpIfFalse(Label),
     Return,
     Halt,
     Load(String),
@@ -43,11 +44,18 @@ pub enum Opcode {
     Import(String),
 }
 
+/// Defines chunk label
+#[derive(Debug, Clone, Default, Copy)]
+pub struct Label(usize);
+
 /// Defines chunk of opcodes
 #[derive(Debug, Clone, Default)]
 pub struct Chunk {
     /// Chunk bytecode
     pub code: Vec<Opcode>,
+
+    /// Chunk labels
+    pub labels: Vec<usize>,
 
     /// Source map:
     /// Pc -> Span
@@ -68,8 +76,25 @@ impl Chunk {
         self.code.len() - 1
     }
 
-    /// Patches opcode at specified index
-    pub fn patch(&mut self, idx: usize, op: Opcode) {
-        self.code[idx] = op
+    /// Inserts new label
+    pub fn insert_label(&mut self, pc: usize) -> Label {
+        self.labels.push(pc);
+        Label(self.labels.len() - 1)
+    }
+
+    /// Creates fresh label
+    pub fn fresh_label(&mut self) -> Label {
+        self.labels.push(self.code.len() - 1);
+        Label(self.labels.len() - 1)
+    }
+
+    /// Patches label at specified index
+    pub fn patch_label(&mut self, label: Label, pc: usize) {
+        self.labels[label.0] = pc
+    }
+
+    /// Returns pc by label
+    pub fn pc_of_label(&self, label: Label) -> usize {
+        self.labels[label.0]
     }
 }

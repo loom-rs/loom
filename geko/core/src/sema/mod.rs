@@ -89,7 +89,7 @@ impl Analyzer {
                 self.analyze_function(function);
             }
             // Analyzing scope block statements
-            Stmt::Scope(block) => {
+            Stmt::Block(block) => {
                 self.analyze_block(block);
             }
             // Analyzing terminator statements
@@ -155,7 +155,9 @@ impl Analyzer {
             // Analyzing field container
             Expr::Field { container, .. } => self.analyze_expr(container),
             // Analyzing arguments and callee
-            Expr::Call { args, what, .. } => {
+            Expr::Call {
+                args, callee: what, ..
+            } => {
                 self.analyze_expr(what);
                 args.iter().for_each(|arg| self.analyze_expr(arg));
             }

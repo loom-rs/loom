@@ -38,7 +38,7 @@ impl<'s> Parser<'s> {
                 let end_span = self.prev().span.clone();
                 result = Expr::Call {
                     span: start_span.clone() + end_span,
-                    what: Box::new(result),
+                    callee: Box::new(result),
                     args,
                 };
                 continue;

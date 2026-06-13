@@ -1,20 +1,20 @@
 use common::{bug, span::Span};
 /// Imports
 use dune::{
-    ops::{Chunk, Opcode},
+    ops::{Chunk, Label, Opcode},
     refs::Ref,
     value::Value,
 };
 
-use crate::ast::{BinOp, Block, Expr, Lit, Stmt, UnOp};
+use crate::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 
 /// Defines loop labels information
 pub struct LoopLabels {
     /// Start label
-    start_label: usize,
+    start_label: Label,
 
     /// End label
-    end_label: usize,
+    end_label: Label,
 }
 
 /// Defines bytecode generator
@@ -125,7 +125,6 @@ impl CodeGenerator {
     /// Performs generation of unary operation
     fn gen_un(&mut self, span: Span, op: UnOp, value: Expr) {
         self.gen_expr(value);
-
         self.chunk().insert(
             span,
             match op {
@@ -146,8 +145,20 @@ impl CodeGenerator {
         self.chunk().insert(span, Opcode::LoadField(name));
     }
 
+    /// Performs generation of call
+    fn gen_call(&mut self, span: Span, callee: Expr, args: Vec<Expr>) {
+        self.gen_expr(callee);
+
+        let arity = args.len();
+        for arg in args {
+            self.gen_expr(arg);
+        }
+
+        self.chunk().insert(span, Opcode::Call(arity));
+    }
+
     /// Performs generation of expression
-    pub fn gen_expr(&mut self, expr: Expr) {
+    fn gen_expr(&mut self, expr: Expr) {
         match expr {
             Expr::Lit { span, lit } => self.gen_lit(span, lit),
             Expr::Bin { span, op, lhs, rhs } => self.gen_bin(span, op, *lhs, *rhs),
@@ -158,7 +169,7 @@ impl CodeGenerator {
                 name,
                 container,
             } => self.gen_field(span, name, *container),
-            Expr::Call { span, args, what } => todo!(),
+            Expr::Call { span, callee, args } => self.gen_call(span, *callee, args),
             Expr::List { span, list } => todo!(),
             Expr::Dict { span, dict } => todo!(),
             Expr::Fun {
@@ -175,8 +186,214 @@ impl CodeGenerator {
         }
     }
 
-    /// Performs generation of a while
-    pub fn gen_while(&mut self, span: Span, cond: Expr, block: Block) {}
+    /// Performs generation of while loop
+    pub fn gen_while(&mut self, span: Span, condition: Expr, block: Block) {
+        // Preparing labels
+        self.chunk().insert(span.clone(), Opcode::Nop);
+        let start_label = self.chunk().fresh_label();
+        let end_label = self.chunk().fresh_label();
+
+        // Jumping to end if condition is false
+        self.gen_expr(condition);
+        self.chunk()
+            .insert(span.clone(), Opcode::JumpIfFalse(end_label));
+
+        // Loop body
+        self.push_loop(LoopLabels {
+            start_label,
+            end_label,
+        });
+        self.gen_block(block);
+        self.chunk().insert(span.clone(), Opcode::Jump(start_label));
+
+        // Patching end label
+        let end_pc = self.chunk().insert(span.clone(), Opcode::Nop);
+        self.chunk().patch_label(end_label, end_pc);
+    }
+
+    /// Performs generation of if
+    pub fn gen_if(&mut self, span: Span, condition: Expr, then: Block, else_: Option<Box<Stmt>>) {
+        // Preparing labels
+        self.chunk().insert(span.clone(), Opcode::Nop);
+        let else_label = self.chunk().fresh_label();
+        let end_label = self.chunk().fresh_label();
+
+        // Jumping to else if condition is false
+        self.gen_expr(condition);
+        self.chunk()
+            .insert(span.clone(), Opcode::JumpIfFalse(else_label));
+
+        // Then block
+        self.gen_block(then);
+        self.chunk().insert(span.clone(), Opcode::Jump(end_label));
+
+        // Else statement
+        let else_pc = self.chunk().insert(span.clone(), Opcode::Nop);
+        if let Some(stmt) = else_ {
+            self.gen_stmt(*stmt);
+        }
+
+        // Patching lables
+        let end_pc = self.chunk().insert(span, Opcode::Nop);
+        self.chunk().patch_label(else_label, else_pc);
+        self.chunk().patch_label(end_label, end_pc);
+    }
+
+    /// Performs generation of assign
+    pub fn gen_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
+        match op {
+            AssignOp::Define => {
+                self.gen_expr(value);
+                self.chunk().insert(span, Opcode::Define(name));
+            }
+            AssignOp::Assign => {
+                self.gen_expr(value);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Add => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Add);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Sub => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Sub);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Mul => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Mul);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Div => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Div);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Mod => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Rem);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::BitAnd => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Band);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::BitOr => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Bor);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Xor => {
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Xor);
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+        }
+    }
+
+    /// Performs generation of set
+    pub fn gen_set(
+        &mut self,
+        span: Span,
+        container: Expr,
+        name: String,
+        op: AssignOp,
+        value: Expr,
+    ) {
+        self.gen_expr(container);
+        match op {
+            AssignOp::Define => {
+                self.gen_expr(value);
+                self.chunk().insert(span, Opcode::DefineField(name));
+            }
+            AssignOp::Assign => {
+                self.gen_expr(value);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Add => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Add);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Sub => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Sub);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Mul => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Mul);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Div => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Div);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Mod => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Rem);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::BitAnd => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Band);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::BitOr => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Bor);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Xor => {
+                self.chunk().insert(span.clone(), Opcode::Dup);
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+                self.gen_expr(value);
+                self.chunk().insert(span.clone(), Opcode::Xor);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+        }
+    }
 
     /// Performs generation of a statement
     pub fn gen_stmt(&mut self, stmt: Stmt) {
@@ -185,13 +402,13 @@ impl CodeGenerator {
                 span,
                 condition,
                 block,
-            } => todo!(),
+            } => self.gen_while(span, condition, block),
             Stmt::If {
                 span,
                 condition,
                 then,
                 else_,
-            } => todo!(),
+            } => self.gen_if(span, condition, then, else_),
             Stmt::For {
                 span,
                 var,
@@ -207,19 +424,19 @@ impl CodeGenerator {
                 name,
                 op,
                 value,
-            } => todo!(),
+            } => self.gen_assign(span, name, op, value),
             Stmt::Set {
                 span,
                 container,
                 name,
                 op,
                 value,
-            } => todo!(),
+            } => self.gen_set(span, container, name, op, value),
             Stmt::Return { span, expr } => todo!(),
             Stmt::Continue(span) => todo!(),
             Stmt::Break(span) => todo!(),
             Stmt::Expr(expr) => todo!(),
-            Stmt::Scope(block) => todo!(),
+            Stmt::Block(block) => todo!(),
             Stmt::Use { span, path, kind } => todo!(),
         }
     }
