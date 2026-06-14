@@ -265,19 +265,12 @@ impl<'s> Parser<'s> {
     fn return_stmt(&mut self) -> Stmt {
         let start_span = self.peek().span.clone();
         self.expect(TokenKind::Return);
+        let value = self.expr();
+        let end_span = self.prev().span.clone();
 
-        if self.check(TokenKind::Rbrace) {
-            Stmt::Return {
-                span: start_span,
-                expr: None,
-            }
-        } else {
-            let value = self.expr();
-            let end_span = self.prev().span.clone();
-            Stmt::Return {
-                span: start_span + end_span,
-                expr: Some(value),
-            }
+        Stmt::Return {
+            span: start_span + end_span,
+            value,
         }
     }
 

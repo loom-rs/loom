@@ -105,6 +105,16 @@ pub enum RuntimeError {
         #[label("here...")]
         span: SourceSpan,
     },
+    /// Unhandled error
+    #[error("unhandled error: `{error}`")]
+    #[diagnostic(code(rt::unhandled_error))]
+    UnhandledError {
+        error: Value,
+        #[source_code]
+        src: Arc<NamedSource<String>>,
+        #[label("error raised here...")]
+        span: SourceSpan,
+    },
     /// Bail
     #[error("bail: {text}")]
     #[diagnostic(code(rt::bail))]

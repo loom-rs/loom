@@ -1,10 +1,10 @@
 /// Imports
-use crate::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
+use crate::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use common::{bug, span::Span};
 use dune::{
     ops::{Chunk, Label, Opcode},
     refs::Ref,
-    value::Value,
+    value::{Function, Value},
 };
 
 /// Defines loop labels information
@@ -407,6 +407,38 @@ impl CodeGenerator {
         }
     }
 
+    /// Performs genertion of function
+    pub fn gen_function(&mut self, function: ast::Function) {
+        // Generating body
+        self.push_chunk();
+        self.gen_block(function.block);
+
+        // Return null by default
+        self.chunk()
+            .insert(function.span.clone(), Opcode::Push(Value::Null));
+        self.chunk().insert(function.span.clone(), Opcode::Return);
+
+        // Done!
+        let chunk = Ref::new(self.pop_chunk());
+
+        // Generating `MakeClosure` and function store
+        self.chunk().insert(
+            function.span,
+            Opcode::MakeClosure(Ref::new(Function {
+                params: function.params,
+                chunk: chunk,
+            })),
+        );
+        self.chunk()
+            .insert(function.sign_span, Opcode::Define(function.name));
+    }
+
+    /// Performs genertion of return
+    pub fn gen_return(&mut self, span: Span, value: Expr) {
+        self.gen_expr(value);
+        self.chunk().insert(span, Opcode::Return);
+    }
+
     /// Performs generation of a statement
     pub fn gen_stmt(&mut self, stmt: Stmt) {
         match stmt {
@@ -430,18 +462,18 @@ impl CodeGenerator {
             Stmt::Class(class) => todo!(),
             Stmt::Enum(_) => todo!(),
             Stmt::Trait(_) => todo!(),
-            Stmt::Function(function) => todo!(),
+            Stmt::Function(function) => self.gen_function(function),
             Stmt::Assign {
                 span,
                 what,
                 op,
                 value,
             } => self.gen_assign(span, what, op, value),
-            Stmt::Return { span, expr } => todo!(),
+            Stmt::Return { span, value } => self.gen_return(span, value),
             Stmt::Continue(span) => todo!(),
             Stmt::Break(span) => todo!(),
             Stmt::Expr(expr) => self.gen_expr(expr),
-            Stmt::Block(block) => todo!(),
+            Stmt::Block(block) => self.gen_block(*block),
             Stmt::Use { span, path, kind } => todo!(),
         }
     }

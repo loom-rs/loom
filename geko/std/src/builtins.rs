@@ -1,8 +1,6 @@
 /// Impovms
 use crate::{arg, builtin_class, error, expect, scope};
-use crate::{callable, class, native_fun};
-use common::bail;
-use dune::errors::RuntimeError;
+use crate::{callable, native_fun};
 use dune::frame::Scope;
 use dune::refs::{MutRef, Ref};
 use dune::value::{Native, Value};

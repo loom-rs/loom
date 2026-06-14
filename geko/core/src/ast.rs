@@ -257,7 +257,7 @@ pub enum Stmt {
     // Return statement
     Return {
         span: Span,
-        expr: Option<Expr>,
+        value: Expr,
     },
     // Continue statement
     Continue(Span),

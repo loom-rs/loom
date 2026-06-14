@@ -92,11 +92,10 @@ impl Analyzer {
                 self.analyze_block(block);
             }
             // Analyzing terminator statements
-            Stmt::Return { span, expr } => {
+            Stmt::Return { span, value } => {
                 // Analyzing return value
-                if let Some(expr) = expr {
-                    self.analyze_expr(expr)
-                }
+                self.analyze_expr(value);
+
                 // Checking hierarchy of scopes for function
                 if !self.hierarchy_has_fn() {
                     bail!(SemaError::ReturnOutsideFn {

@@ -118,7 +118,7 @@ impl<'s> Parser<'s> {
                 span: start_span.clone() + end_span.clone(),
                 stmts: vec![Stmt::Return {
                     span: start_span + end_span,
-                    expr: Some(expr),
+                    value: expr,
                 }],
             }
         } else {

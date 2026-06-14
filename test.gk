@@ -1,7 +1,9 @@
-a := 0
-
-while a < 1000 {
-    a += 1
+fun fib(n) {
+    if n <= 1 {
+        return n
+    } else {
+        return fib(n - 1) + fib(n - 2)
+    }
 }
 
-putln(a)
+putln(fib(15))

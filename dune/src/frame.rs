@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    ops::{Chunk, Label, Opcode},
+    ops::{Chunk, Handler, Label, Opcode},
     refs::{MutRef, Ref},
     value::Value,
 };
@@ -63,7 +63,7 @@ pub struct Frame {
     pub chunk: Ref<Chunk>,
 
     /// Program counter
-    pub pc: usize,
+    pc: usize,
 
     /// Scope chain
     pub scope: MutRef<Scope>,
@@ -117,12 +117,12 @@ impl Frame {
     }
 
     /// Jumps to target pc
-    pub fn jump_pc(&mut self, pc: usize) {
+    pub fn jump(&mut self, pc: usize) {
         self.pc = pc
     }
 
     /// Increments pc
-    pub fn inc_pc(&mut self) {
+    pub fn next_instruction(&mut self) {
         self.pc += 1
     }
 
@@ -143,5 +143,15 @@ impl Frame {
             .get(self.pc)
             .cloned()
             .unwrap_or_else(|| bug!("pc > source map len"))
+    }
+
+    /// Returns handler by current pc
+    pub fn handler(&self) -> Option<Handler> {
+        self.chunk
+            .handlers
+            .iter()
+            .rev()
+            .find(|h| (h.start..h.end).contains(&self.pc))
+            .cloned()
     }
 }

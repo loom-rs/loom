@@ -6,7 +6,7 @@ use crate::{
     ops::{Label, Opcode},
     refs::{MutRef, Ref},
     value::{
-        Bound, Callable, Class, Closure, Instance, Method, Module, Native,
+        Bound, Callable, Class, Closure, Function, Instance, Method, Module, Native,
         Value::{self},
     },
 };
@@ -501,7 +501,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let pc = frame.pc_of_label(label);
 
-        frame.jump_pc(pc);
+        frame.jump(pc);
     }
 
     /// Executes jump if true op
@@ -517,7 +517,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         if result {
             let pc = frame.pc_of_label(label);
-            frame.jump_pc(pc);
+            frame.jump(pc);
         }
     }
 
@@ -534,7 +534,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         if !result {
             let pc = frame.pc_of_label(label);
-            frame.jump_pc(pc);
+            frame.jump(pc);
         }
     }
 
@@ -874,6 +874,15 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         scope.insert(&name, value);
     }
 
+    /// Executes make closure op
+    fn op_make_closure(&mut self, function: Ref<Function>) {
+        let callable = Value::Callable(Callable::Closure(Ref::new(Closure {
+            function,
+            scope: self.frame_mut().scope.clone(),
+        })));
+        self.frame_mut().push(callable);
+    }
+
     /// Executes import op
     fn op_import(&mut self, path: String) {
         let span = self.frame().span();
@@ -895,6 +904,66 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         // Pushing frame
         self.push_with_scope(chunk, scope);
+    }
+
+    /// Unwinds stack by executing function on current frame.
+    /// If function returns `true`, stops unwinding.
+    /// Otherwise, the current frame is popped and the function is executed
+    /// again on the previous frame.
+    ///
+    /// Returns `true` on success and returns `false` when `stack.len()` is 0
+    pub fn unwind<F>(&mut self, f: F) -> bool
+    where
+        F: Fn(&mut VirtualMachine) -> bool,
+    {
+        // Getting last frame
+        match self.stack.last() {
+            Some(_) => {
+                // If function executes successfully
+                if f(self) {
+                    true
+                }
+                // If not
+                else {
+                    self.pop();
+                    self.unwind(f)
+                }
+            }
+            None => false,
+        }
+    }
+
+    /// Executes raise op
+    fn op_raise(&mut self) {
+        // Preparing error
+        let frame = self.frame_mut();
+        let span = frame.span();
+        let pending_error = frame.pop();
+
+        // Unwinding stack
+        let result = self.unwind(|vm| match vm.frame().handler() {
+            Some(handler) => {
+                let frame = vm.frame_mut();
+                let pc = frame.pc_of_label(handler.target);
+                frame.jump(pc);
+                true
+            }
+            None => false,
+        });
+
+        // If unwinding is succeed
+        if result {
+            // Pushing pending error to stack
+            self.frame_mut().push(pending_error);
+        }
+        // Otherwise, raising unhandled error
+        else {
+            bail!(RuntimeError::UnhandledError {
+                error: pending_error,
+                src: span.0,
+                span: span.1.into()
+            })
+        }
     }
 
     /// Runs vm execution loop
@@ -951,13 +1020,15 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Load(name) => self.op_load(name),
                 Opcode::Store(name) => self.op_store(name),
                 Opcode::Define(name) => self.op_define(name),
-                // Import operations
+                // Make closure operation
+                Opcode::MakeClosure(function) => self.op_make_closure(function),
+                // Import operation
                 Opcode::Import(path) => self.op_import(path),
+                // Raise exception operation
+                Opcode::Raise => self.op_raise(),
             }
 
-            if self.stack.len() > 0 {
-                self.frame_mut().inc_pc();
-            }
+            self.frame_mut().next_instruction();
         }
     }
 }

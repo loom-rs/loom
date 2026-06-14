@@ -1,5 +1,8 @@
 /// Imports
-use crate::value::Value;
+use crate::{
+    refs::Ref,
+    value::{Function, Value},
+};
 use common::span::Span;
 
 /// Defines virtual machine operation code
@@ -40,12 +43,27 @@ pub enum Opcode {
     LoadField(String),
     StoreField(String),
     DefineField(String),
+    MakeClosure(Ref<Function>),
     Import(String),
+    Raise,
 }
 
 /// Defines chunk label
 #[derive(Debug, Clone, Default, Copy)]
 pub struct Label(usize);
+
+/// Defines range exception handler
+#[derive(Debug, Clone, Default, Copy)]
+pub struct Handler {
+    /// Start pc
+    pub start: usize,
+
+    /// End pc
+    pub end: usize,
+
+    /// Target label
+    pub target: Label,
+}
 
 /// Defines chunk of opcodes
 #[derive(Debug, Clone, Default)]
@@ -53,13 +71,16 @@ pub struct Chunk {
     /// Chunk bytecode
     pub code: Vec<Opcode>,
 
+    /// Source map:
+    /// Pc -> Span
+    pub source_map: Vec<Span>,
+
     /// Chunk labels map:
     /// Id -> Pc
     pub labels: Vec<usize>,
 
-    /// Source map:
-    /// Pc -> Span
-    pub source_map: Vec<Span>,
+    /// Exception handlers
+    pub handlers: Vec<Handler>,
 }
 
 /// Chunk implementation
