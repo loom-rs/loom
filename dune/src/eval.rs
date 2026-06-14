@@ -1028,7 +1028,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Raise => self.op_raise(),
             }
 
-            self.frame_mut().next_instruction();
+            // Switching to next instruction
+            self.frame_mut().step();
         }
     }
 }

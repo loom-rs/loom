@@ -122,7 +122,7 @@ impl Frame {
     }
 
     /// Increments pc
-    pub fn next_instruction(&mut self) {
+    pub fn step(&mut self) {
         self.pc += 1
     }
 
