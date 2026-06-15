@@ -6,4 +6,4 @@ fun fib(n) {
     }
 }
 
-putln(fib(15))
+putln(fib(30))

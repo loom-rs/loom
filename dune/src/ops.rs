@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 /// Imports
 use crate::{
     refs::Ref,
-    value::{Function, Value},
+    value::{Function, TraitFunction, Value},
 };
 use common::span::Span;
 
@@ -44,6 +46,8 @@ pub enum Opcode {
     StoreField(String),
     DefineField(String),
     MakeClosure(Ref<Function>),
+    MakeClass(String, HashMap<String, Ref<Function>>),
+    MakeTrait(String, Vec<TraitFunction>),
     Import(String),
     Raise,
 }

@@ -6,7 +6,8 @@ use crate::{
     ops::{Label, Opcode},
     refs::{MutRef, Ref},
     value::{
-        Bound, Callable, Class, Closure, Function, Instance, Method, Module, Native,
+        Bound, Callable, Class, Closure, Function, Instance, Method, Module, Native, Trait,
+        TraitFunction,
         Value::{self},
     },
 };
@@ -615,9 +616,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             .iter()
             .zip(args)
             .for_each(|(p, a)| self.frame_mut().scope.borrow_mut().insert(p, a));
-
-        // Performing execution of chunk
-        self.exec();
     }
 
     /// Calls native function
@@ -649,6 +647,9 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         // Creating instance
         let instance = self.create_instance(class);
 
+        // Pushing instance onto the stack
+        self.frame_mut().push(Value::Instance(instance.clone()));
+
         // If `init` exists and it's a bound method, call it
         if let Some(Value::Callable(Callable::Bound(bound))) = {
             // Temp borrow
@@ -661,9 +662,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             // Either no init or not a bound method -> check arity 0
             self.check_arity(span, 0, args.len());
         }
-
-        // Pushing instance onto the stack
-        self.frame_mut().push(Value::Instance(instance))
     }
 
     /// Calls callable
@@ -883,6 +881,36 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.frame_mut().push(callable);
     }
 
+    /// Executes make class op
+    fn op_make_class(&mut self, name: String, methods: HashMap<String, Ref<Function>>) {
+        // Preparing class
+        let scope = self.frame_mut().scope.clone();
+        let class = Ref::new(Class {
+            name,
+            methods: methods
+                .into_iter()
+                .map(|(name, function)| {
+                    (
+                        name,
+                        Method::Closure(Ref::new(Closure {
+                            function,
+                            scope: scope.clone(),
+                        })),
+                    )
+                })
+                .collect(),
+        });
+
+        // Pushing class onto stack
+        self.frame_mut().push(Value::Class(class));
+    }
+
+    /// Executes make trait op
+    fn op_make_trait(&mut self, name: String, functions: Vec<TraitFunction>) {
+        self.frame_mut()
+            .push(Value::Trait(Ref::new(Trait { name, functions })));
+    }
+
     /// Executes import op
     fn op_import(&mut self, path: String) {
         let span = self.frame().span();
@@ -899,7 +927,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         }));
         self.modules.insert(&id, module.clone());
 
-        // Pushing module to stack
+        // Pushing module onto stack
         self.frame_mut().push(Value::Module(module));
 
         // Pushing frame
@@ -953,7 +981,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         // If unwinding is succeed
         if result {
-            // Pushing pending error to stack
+            // Pushing pending error onto stack
             self.frame_mut().push(pending_error);
         }
         // Otherwise, raising unhandled error
@@ -1020,8 +1048,10 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Load(name) => self.op_load(name),
                 Opcode::Store(name) => self.op_store(name),
                 Opcode::Define(name) => self.op_define(name),
-                // Make closure operation
+                // Make operations
                 Opcode::MakeClosure(function) => self.op_make_closure(function),
+                Opcode::MakeClass(name, methods) => self.op_make_class(name, methods),
+                Opcode::MakeTrait(name, functions) => self.op_make_trait(name, functions),
                 // Import operation
                 Opcode::Import(path) => self.op_import(path),
                 // Raise exception operation

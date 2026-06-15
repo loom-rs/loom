@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
 /// Imports
 use crate::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use common::{bug, span::Span};
 use dune::{
     ops::{Chunk, Label, Opcode},
     refs::Ref,
-    value::{Function, Value},
+    value::{Class, Function, Method, Value},
 };
 
 /// Defines loop labels information
@@ -421,7 +423,7 @@ impl CodeGenerator {
         // Done!
         let chunk = Ref::new(self.pop_chunk());
 
-        // Generating `MakeClosure` and function store
+        // Generating `MakeClosure` and function define
         self.chunk().insert(
             function.span,
             Opcode::MakeClosure(Ref::new(Function {
@@ -431,6 +433,41 @@ impl CodeGenerator {
         );
         self.chunk()
             .insert(function.sign_span, Opcode::Define(function.name));
+    }
+
+    /// Performs generation of class
+    pub fn gen_class(&mut self, class: ast::Class) {
+        // Generating methods
+        let methods = class
+            .methods
+            .into_iter()
+            .map(|method| {
+                // Generating body
+                self.push_chunk();
+                self.gen_block(method.block);
+
+                // Return null by default
+                self.chunk()
+                    .insert(method.span.clone(), Opcode::Push(Value::Null));
+                self.chunk().insert(method.span.clone(), Opcode::Return);
+
+                // Done!
+                let chunk = Ref::new(self.pop_chunk());
+                (
+                    method.name,
+                    Ref::new(Function {
+                        params: method.params,
+                        chunk,
+                    }),
+                )
+            })
+            .collect();
+
+        // Generating `MakeClass` and class define
+        self.chunk()
+            .insert(class.span, Opcode::MakeClass(class.name.clone(), methods));
+        self.chunk()
+            .insert(class.name_span.clone(), Opcode::Define(class.name));
     }
 
     /// Performs genertion of return
@@ -459,7 +496,7 @@ impl CodeGenerator {
                 iterable,
                 block,
             } => todo!(),
-            Stmt::Class(class) => todo!(),
+            Stmt::Class(class) => self.gen_class(class),
             Stmt::Enum(_) => todo!(),
             Stmt::Trait(_) => todo!(),
             Stmt::Function(function) => self.gen_function(function),
