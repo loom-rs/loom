@@ -59,7 +59,7 @@ impl IO for CliIO {
     fn cwd(&self) -> Option<Utf8PathBuf> {
         // Matching current directory
         match env::current_dir() {
-            // Note: from_path_buf is no implemented with reference
+            // Note: `from_path_buf` is no implemented with reference
             Ok(path) => match Utf8PathBuf::from_path_buf(path.clone()) {
                 Ok(path) => Some(path),
                 Err(_) => bail!(IOError::NonUtf8Path(path)),

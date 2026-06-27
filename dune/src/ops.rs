@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 /// Imports
 use crate::{
     refs::Ref,
     value::{Function, TraitFunction, Value},
 };
 use common::span::Span;
+use std::collections::HashMap;
 
 /// Defines virtual machine operation code
 #[derive(Debug, Clone)]

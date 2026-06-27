@@ -578,7 +578,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             .collect()
     }
 
-    /// Creates instance of the class
+    /// Creates fresh instance of class.
+    /// Return reference to created instance
     fn create_instance(&mut self, class: Ref<Class>) -> MutRef<Instance> {
         // Creating instance
         let instance = MutRef::new(RefCell::new(Instance {
@@ -594,7 +595,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         instance
     }
 
-    /// Calls closure
+    /// Executes closure in new frame. Returns call result
     pub fn call_closure(&mut self, span: &Span, closure: Ref<Closure>, args: Vec<Value>) -> Value {
         // Checking arity
         self.check_arity(span, closure.function.params.len(), args.len());
@@ -610,7 +611,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             .zip(args)
             .for_each(|(p, a)| self.frame_mut().scope.borrow_mut().insert(p, a));
 
-        // Running loop
+        // Executing function
         self.exec();
 
         // Popping result
@@ -623,7 +624,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         result
     }
 
-    /// Calls native function
+    /// Executes native function. Returns call result
+    /// Note: frame is not pushed for native call
     pub fn call_native(&mut self, span: &Span, native: Ref<Native>, args: Vec<Value>) -> Value {
         // Checking arity
         self.check_arity(span, native.arity, args.len());
@@ -632,14 +634,15 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         (*native.function)(self, span, args)
     }
 
-    /// Calls bound method
+    /// Calls bound to instance method. Returns call result.
+    /// Note: inserts `self` argument with instance value method belongs to
     pub fn call_bound_method(
         &mut self,
         span: &Span,
         bound: Ref<Bound>,
         mut args: Vec<Value>,
     ) -> Value {
-        // Inserting `self` parameter
+        // Inserting `self` argument
         args.insert(0, Value::Instance(bound.belongs_to.clone()));
 
         // Bound closure
@@ -649,7 +652,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         }
     }
 
-    /// Calls type and creates instance
+    /// Creates fresh class instance
+    /// and calls `init` method if presented. Returns class instance value.
     pub fn call_class(&mut self, span: &Span, class: Ref<Class>, args: Vec<Value>) -> Value {
         // Creating instance
         let instance = self.create_instance(class);
@@ -660,10 +664,11 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             let borrow = instance.borrow();
             borrow.fields.get("init").cloned()
         } {
-            // Calling bound method, if found
-            self.call_bound_method(span, bound, args);
+            // Note: `init` function result should be ignored
+            let _ = self.call_bound_method(span, bound, args);
         } else {
-            // Either no init or not a bound method -> check arity 0
+            // Either no `init` or `init` is not a bound method,
+            // checking args arity is zero
             self.check_arity(span, 0, args.len());
         }
 
@@ -671,7 +676,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         Value::Instance(instance)
     }
 
-    /// Calls callable
+    /// Calls callable with passed args by dispatching
+    /// specific kinds of callables to specific call functions. Returns call result.
     pub fn call(&mut self, span: &Span, callable: Callable, args: Vec<Value>) -> Value {
         match callable {
             Callable::Closure(closure) => self.call_closure(span, closure, args),
@@ -711,7 +717,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Performs field access
-    pub(crate) fn access_field(span: &Span, name: &str, container: Value) -> Value {
+    pub(crate) fn access_field(span: &Span, container: Value, name: &str) -> Value {
         // Matching container
         match container {
             // Module field access
@@ -751,7 +757,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Performs field set
-    pub(crate) fn set_field(span: &Span, name: &str, container: Value, value: Value) {
+    pub(crate) fn set_field(span: &Span, container: Value, name: &str, value: Value) {
         // Matching container
         match container {
             // Module field access
@@ -788,7 +794,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Performs field define
-    pub(crate) fn define_field(span: &Span, name: &str, container: Value, value: Value) {
+    pub(crate) fn define_field(span: &Span, container: Value, name: &str, value: Value) {
         // Matching container
         match container {
             // Module field access
@@ -813,7 +819,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let span = frame.span();
         let container = frame.pop();
-        frame.push(Self::access_field(&span, &field, container))
+        frame.push(Self::access_field(&span, container, &field))
     }
 
     /// Executes store field op
@@ -824,7 +830,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let value = frame.pop();
         let container = frame.pop();
 
-        Self::set_field(&span, &field, container, value)
+        Self::set_field(&span, container, &field, value)
     }
 
     /// Executes define field op
@@ -835,7 +841,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let value = frame.pop();
         let container = frame.pop();
 
-        Self::define_field(&span, &field, container, value)
+        Self::define_field(&span, container, &field, value)
     }
 
     /// Executes load op
