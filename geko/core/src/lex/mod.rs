@@ -72,12 +72,12 @@ impl<'s> Lexer<'s> {
 
     /// Scans unicode codepoint.
     fn scan_unicode_codepoint(&mut self, small: bool) -> char {
-        // Start location
         let start_location = self.idx - 1;
 
         // Calculating amount of hex digits
         let hex_digits_amount = if small { 4 } else { 8 };
 
+        // Checking for a left brace
         if self.current != Some('{') {
             bail!(LexError::InvalidEscapeSequence {
                 src: self.source.clone(),
@@ -87,6 +87,7 @@ impl<'s> Lexer<'s> {
         }
         self.advance();
 
+        // Reading hex digits to buffer
         let mut buffer = String::new();
         for _ in 0..hex_digits_amount {
             match self.current {
@@ -109,6 +110,7 @@ impl<'s> Lexer<'s> {
             }
         }
 
+        // Checking for a right brace
         if self.current != Some('}') {
             bail!(LexError::InvalidEscapeSequence {
                 src: self.source.clone(),
@@ -118,6 +120,7 @@ impl<'s> Lexer<'s> {
         }
         self.advance();
 
+        // Parsing char from hex
         match char::from_u32(u32::from_str_radix(&buffer, 16).expect("Invalid hex")) {
             Some(c) => c,
             None => {
@@ -132,9 +135,9 @@ impl<'s> Lexer<'s> {
 
     /// Scans byte codepoint.
     fn scan_byte_codepoint(&mut self) -> char {
-        // Start location
         let start_location = self.idx - 1;
 
+        // Checking for a left brace
         if self.current != Some('{') {
             bail!(LexError::InvalidEscapeSequence {
                 src: self.source.clone(),
@@ -144,6 +147,7 @@ impl<'s> Lexer<'s> {
         }
         self.advance();
 
+        // Reading hex digits to buffer
         let mut buffer = String::new();
         for _ in 0..2 {
             match self.current {
@@ -166,6 +170,7 @@ impl<'s> Lexer<'s> {
             }
         }
 
+        // Checking for a right brace
         if self.current != Some('}') {
             bail!(LexError::InvalidEscapeSequence {
                 src: self.source.clone(),
@@ -175,6 +180,7 @@ impl<'s> Lexer<'s> {
         }
         self.advance();
 
+        // Parsing char from hex
         match char::from_u32(u32::from_str_radix(&buffer, 16).expect("Invalid hex")) {
             Some(c) => c,
             None => {
@@ -189,12 +195,13 @@ impl<'s> Lexer<'s> {
 
     /// Advances escape sequence.
     fn advance_escape_sequence(&mut self) -> char {
-        // `\` char
+        // Eating `\` char
         self.advance();
-        // Reading next char
+
+        // Reading and eating escape char
         let ch = self.current;
-        // Advancing char
         self.advance();
+
         // Checking character kind.
         match ch {
             Some('n') => '\n',
@@ -214,12 +221,12 @@ impl<'s> Lexer<'s> {
 
     /// Advances string
     fn advance_string(&mut self) -> Token {
-        // Advancing `"`
+        // Eating `"`
         self.advance();
         let start = self.idx;
-        // Text buffer
+
+        // Reading string to buffer before reaching `"`
         let mut buffer = String::new();
-        // Building string before reaching `"`
         while self.current != Some('"') {
             // Checking for next char
             match &self.current {
@@ -234,7 +241,8 @@ impl<'s> Lexer<'s> {
                 }),
             }
         }
-        // Advancing `"`
+
+        // Eating `"`
         self.advance();
         let end = self.idx;
         Token::new(
@@ -244,43 +252,49 @@ impl<'s> Lexer<'s> {
         )
     }
 
-    /// Advances number
-    fn advance_number(&mut self) -> Token {
-        let start = self.idx;
-        // If number is float
-        let mut is_float = false;
-        // Text buffer
-        let mut buffer = String::new();
-        // Building number before reaching
-        // non-digit char.
+    /// Eats digits sequence into specified buffer
+    fn eat_digits(&mut self, buffer: &mut String) {
+        // Reading digits before reaching non-digit char or eof
         while self.is_digit() && !self.is_eof() {
             buffer.push(self.current.unwrap());
             self.advance();
-            // Checking for float dot
-            if self.current == Some('.') {
-                // If next is digit
-                if self.next.map(|it| it.is_ascii_digit()).unwrap_or(false) {
-                    // If already float
-                    if is_float {
-                        bail!(LexError::InvalidFloat {
-                            src: self.source.clone(),
-                            span: (start..self.idx).into(),
-                        })
-                    } else {
-                        buffer.push('.');
-                        self.advance();
-                        is_float = true;
-                    }
-                }
-                // If next dot
-                else if self.next == Some('.') {
-                    break;
-                }
-            }
         }
-        let end = self.idx;
+    }
+
+    /// Advances number
+    fn advance_number(&mut self) -> Token {
+        let start = self.idx;
+
+        // Preparing number buffer
+        let mut buffer = String::new();
+
+        // Reading first sequence of digits
+        self.eat_digits(&mut buffer);
+
+        // If dot presented,
+        // reading second sequence of digits
+        if self.current == Some('.') {
+            self.advance();
+            self.eat_digits(&mut buffer);
+        }
+
+        // If exponent presented, reading it
+        if matches!(self.current, Some('e') | Some('E')) {
+            buffer.push(self.current.unwrap());
+            self.advance();
+
+            // Checking for sign
+            if matches!(self.current, Some('+') | Some('-')) {
+                buffer.push(self.current.unwrap());
+                self.advance();
+            }
+
+            // Parsing last sequence of digits
+            self.eat_digits(&mut buffer);
+        }
+
         Token::new(
-            Span(self.source.clone(), start..end),
+            Span(self.source.clone(), start..self.idx),
             TokenKind::Number,
             buffer,
         )
@@ -313,17 +327,16 @@ impl<'s> Lexer<'s> {
 
     /// Advances id or keyword
     fn advance_id_or_kw(&mut self) -> Token {
+        // Reading id before reaching
+        // char that is not a letter, digit or underscore
         let start = self.idx;
-        // Text buffer
         let mut buffer = String::new();
-        // Building id before reaching
-        // char that is not letter, not digit,
-        // and not underscore.
         while (self.is_id_letter() || self.is_digit()) && !self.is_eof() {
             buffer.push(self.current.unwrap());
             self.advance();
         }
         let end = self.idx;
+
         Token::new(
             Span(self.source.clone(), start..end),
             Self::token_kind_for_id(&buffer),
@@ -333,8 +346,10 @@ impl<'s> Lexer<'s> {
 
     /// Skips comment
     fn skip_comment(&mut self) {
-        // #
+        // Eating `#`
         self.advance();
+
+        // Eating comment before reaching new line
         while self.current != Some('\n') {
             self.advance();
         }
@@ -342,12 +357,12 @@ impl<'s> Lexer<'s> {
 
     /// Skips multiline comment
     fn skip_multiline_comment(&mut self) {
-        // #[
+        // Eating `#[`
         let start = self.idx;
         self.advance();
         self.advance();
 
-        // Skipping comment
+        // Eating comment before reaching `]#`
         while !(self.current == Some(']') && self.next == Some('#')) {
             // If eof -> reporting error
             if self.is_eof() {
@@ -360,7 +375,7 @@ impl<'s> Lexer<'s> {
             }
         }
 
-        // ]#
+        // Eating `]#`
         self.advance();
         self.advance();
     }
@@ -390,27 +405,25 @@ impl<'s> Lexer<'s> {
         }
     }
 
-    /// Is whitespace
+    /// Returns true if char is ` `, `\n`, `\t` or `\r`
     #[allow(clippy::match_like_matches_macro)]
     fn is_whitespace(&mut self) -> bool {
-        // Explicit match
         match self.current {
             Some(' ') | Some('\n') | Some('\t') | Some('\r') => true,
             _ => false,
         }
     }
 
-    /// Is id letter
+    /// Returns `true` if char is letter or underscore
     #[allow(clippy::match_like_matches_macro)]
     fn is_id_letter(&mut self) -> bool {
-        // Explicit match
         match self.current {
             Some(it) if it.is_ascii_alphabetic() || it == '_' => true,
             _ => false,
         }
     }
 
-    /// Is digit
+    /// Returns `true` if current char is ascii digit
     #[allow(clippy::match_like_matches_macro)]
     fn is_digit(&mut self) -> bool {
         match self.current {
@@ -419,7 +432,7 @@ impl<'s> Lexer<'s> {
         }
     }
 
-    /// Is end of file
+    /// Returns `true` if `current` is `None`
     fn is_eof(&mut self) -> bool {
         self.current.is_none()
     }

@@ -1,8 +1,65 @@
-## 🪭 Syntax examples
+### 🏜️ Geko design document
+This document describes syntax and semantics of the `Geko` programming language.
 
-This document describes syntax of the `Geko` programming language.
+### 🦎 Overview
+Geko is a dynamic-typed, friendly, lightweight programming language 
+for math and games, designed to be simple, readable and easy-to-learn. 
 
-### 🎨 Data types
+### Goals
+- Simple and lightweight
+- Minimal and readable syntax
+- Easy to learn and use
+
+### Non-goals
+- High-performance systems programming
+- Complex features
+- Unpredictable, implicit behaviour
+
+### Reserved words
+Best way to get a quick feel for a language's style is to see what words it uses. 
+Here’s what Geko has:
+```
+for while in use class enum if else
+return continue brrak as fun trait pick
+```
+
+### Comments
+Geko supports block and line comments. Here is an example:
+```
+# Line comment
+#[
+  Block comment
+]#
+```
+
+### Identifiers
+Naming rules are simple. Identifiers should start with letter or underscore 
+and may contain letters, digits and underscores.
+
+Here is some examples:
+```
+abc123
+abc
+_abc
+```
+
+### Blocks
+Block represents series of statements, like this:
+```
+{
+  a := 5
+  b := 2
+  return a + b
+}
+```
+Geko uses curly braces `{` and `}` to define blocks.
+You can use blocks in control flow statements, functions and classes.
+
+### Values
+A value is the smallest unit of information that can be obtained 
+by evaluating expressions or using literals. 
+
+Every value has a type. Here is a table of value types:
 | Data type | Description                                                               |   Rust representation            |
 |-----------|---------------------------------------------------------------------------|----------------------------------|
 | int       | integer number                                                            | `i64`                            |
@@ -10,142 +67,202 @@ This document describes syntax of the `Geko` programming language.
 | bool      | logical (bool) type: `true` or `false`                                    | `bool`                           |
 | string    | text data                                                                 | `String`                         |
 | callable  | represents reference to  any callable: function, native, bound, etc.      | `Rc<Function>`                   |
-| class     | represents reference to the class.                                        | `Rc<Class>`                      |
-| enum      | represents reference to enumeration.                                      | `Rc<Enum>`                       |
-| instance  | represents reference to instance of the type.                             | `Rc<RefCell<Instance>>`          |
+| class     | represents reference to class.                                            | `Rc<Class>`                      |
+| enum      | represents reference to enum.                                             | `Rc<Enum>`                       |
+| trait     | represents reference to trait.                                            | `Rc<Trait>`                      |
+| instance  | represents reference to instance of the class.                             | `Rc<RefCell<Instance>>`          |
 | null      | represents null value or `nothing`.                                       | `()`                             |
 | module    | represents reference to the module.                                       | `Rc<RefCell<Module>>`            |
 | any       | represents internal rusts `std::Any` variable                             | `Rc<RefCell<dyn std::any::Any>>` |
 
-### Variable declaration
-`Geko` does not support variables shadowing, so here's
-a way to define variable and to reassign it.
-
-Variable definition:
-```geko
-id := value
+### Variables
+Variables are mutable memory cells, where you can store any value you need.
+Here is example how to define, assign variables:
 ```
-
-Variable assignment:
+a := 5 # define variable
+a = 5 # assign variable
+a := true # redefine variable
 ```
-id = value
-```
+Geko supports variables shadowing, so you can redefine your variables.
 
-### Binary operations
+### Operations
 `Geko` supports following binary operations:
-
 ```geko
 + - * / % && & || | ^ > < == != >: >!
 ```
 
-### Unary operations
-`Geko` supports following unary operations:
-
+And following unary operations:
 ```
 - !
 ```
 
-### Compound operators
-`Geko` supports following compound operators:
-
+### Control flow statements
+Geko supports conditional logic like any other language.
+The simplest branching statement is `if`. Here is an example:
 ```
-id += value
-id -= value
-id *= value
-id /= value
-id %= value
-id &= value
-id |= value
-```
-
-### Value examples
-Examples of the values:
-
-| Data type | Example of the value        |
-|-----------|-----------------------------|
-| int       | 123                         | 
-| float     | 123.456                     |
-| bool      | true / false                |
-| string    | "text"                      |
-| function  | fun(x, y) {} return x + y } |
-| class     | AnyDeclaredClass            |
-| enum      | AnyDeclaredEnum             |
-| instance  | AnyDeclaredClass()          |
-| null      | null                        |
-| native    | declared native             |
-| module    | module                      |
-| any       | any_native_value            |
-
-### Functions example
-Here's an example on how you can define function in `Geko`:
-
-```geko
-fun fib(x) {
-  if x <= 1 {
-    return x
-  } else {
-    return fib(x - 1) + fib(x - 2)
-  }
+if a > 5 {
+  ...
+} else if a < 5 {
+  ...
+} else {
+  ...
 }
 ```
 
-Geko supports closures:
+Geko supports different kinds of loops. Loop executes code repeatedly.
+Here is an example for the `while` loop:
+```
+while i < 1000 {
+  ...
+}
+```
+While loop repeats code until condition becomes falsey.
 
-```geko
-fun a() {
-  x := 1
-  fun b() {
-    x += 1
-  }
-  b() # x = 2
-  return b
+And examples for the `for` loop:
+```
+for i in 0..100 {
+  ...
 }
 
-b := a()
-b() # x = 3
-b() # x = 4
-b() # x = 5
+for i in list {
+  ...
+}
+```
+For loop iterates over list and repeats code every iteration.
+
+### Functions
+It's hard to write good code without thinking about breaking it down 
+into smaller, reusable pieces. We call it functions.
+Here is an example to define function in Geko:
+```
+fun hello(name) {
+  putln("Hello, " + name)
+}
+```
+Function parameters are enclosed in parens `(` and `)`.
+
+Sometimes you need to pass the context of the outer scope to the inner one,
+but doing this using params is a bad case. To solve this, Geko supports closures:
+```
+fun outer() {
+  x := 0
+  fun inner() {
+    x += 1 # function can see outer scope!
+  }
+  inner() # x = 1
+  return inner
+}
+
+inner := outer()
+inner() # x = 2
 ```
 
-### Classes or custom data types
-`Geko` supports custom data types. Here is example:
+It is also useful to pass a function as an argument to another function, 
+or to store a function in a variable with a name different from the function itself.
+In Geko, functions are first-class values, so you can do the following:
+```
+fun sum(a, b) {
+  return a + b
+}
+a := sum
+a(1, 2) # works fine!
+```
 
-```geko
-class Dog {
+But doing this every time creating a named function is just not practical.
+Here is an example how to use anonymous functions:
+```
+fun do_stuff(a, f) {
+  f(a)
+}
+
+do_stuff(1, fun(x) -> x + 1)
+do_stuff(2, fun(x) {
+  return x + 1
+})
+```
+
+### Classes
+Sooner or later, every developer will want to create their own data structure.
+In Geko, you can use classes for this:
+```
+class Battery {
+  fun init(self, energy) {
+    self.energy := energy
+  }
+  fun charge(self, power) {
+    if self.energy + power > 100 {
+      self.energy = 100
+    } else {
+      self.energy += power
+    }
+  }
+}
+
+battery := Battery(90)
+battery.energy = 70 # you can assign fields
+battery.voltage := 2 # you can declare new fields
+battery.charge(20) # you can call methods
+battery.charge = fun(self, x) {
+  self.x += 1
+} # methods are also fields
+```
+A class is a blueprint for creating an object with the fields and methods you need.
+You can see `self` param in methods. This parameter passes instance of class to your method.
+
+### Enums
+When writing programs, there are times when you need to store a kind of something.
+Enums are well-suited for this purpose. Enum is a container that stores mapping: `Name` -> `Int`
+Here is an example:
+```
+enum Direction {
+  North, # 1
+  South, # 2
+  West,  # 3
+  East   # 4
+}
+
+direction := Direction.North
+direction = Direction.South
+
+putln(direction) # prints `2`
+```
+
+### Traits
+At some point, there are simply too many classes, and it becomes necessary 
+to validate input values based on specific criteria. This is where traits come in.
+Trait is a behaviour description that can be used to validate values.
+Here is an example:
+```
+trait Dog {
+  fun bark(self)
+  fun feed(self, amount)
+}
+
+class Dalmatian {
   fun init() {
-    self.food := 3
-    self.water := 3
+    self.food := 20
   }
-  fun get_food() {
-    return self.food
+  fun bark(self) {
+    putln("Dalmatian barks!")
+  }
+  fun feed(self, amount) {
+    self.food += amount
   }
 }
 
-dog := Dog()
-a := dog.get_food()
-b := dog.food
-# a == b
-```
-
-### Comments
-`Geko` comments examples:
-
-```
-#[
-Here is multiline 
-comment in 
-square
-brackets
-]#
-```
-
-```
-# Here is single line comment
+dalmatian := Dalmatian()
+if dalmatian >: Dog {
+  putln("Dalmatian impls Dog!")
+}
+if 123 >! Dog {
+  putln("Int doesn't impl Dog!")
+}
 ```
 
 ### Usings
-`Geko` is modular:
-
+It's hard to maintain a code without breaking file into small modules. 
+`Geko` is modular, every file is a module.
+Here is an example how to use one file from another:
 ```
 use "a" # import `a` as `a`
 use "a" as b # import `a` as `b`
@@ -153,132 +270,8 @@ use "a" pick b # import `b` from `a` directly by `shallow copying` it
 use "a" pick b, c # import multiple items
 ```
 
-`Geko` supports relative imports with `@/` prefix:
+By default, import resolves module relative to current directory.
+`Geko` also supports imports relative to current file with `@/` prefix:
 ```
 use "@/a/b/c" # imports `a/b/c` relative to current file as `c`
-```
-
-### Loops
-`Geko` loops examples:
-
-For loop with range examples.
-You can use any expression instead of numbers in range.
-```
-for i in 0..100 {
-  putln(i)
-}
-
-for i in 100..0 {
-  putln(i)
-}
-
-for i in 0..=100 {
-  putln(i)
-}
-
-for i in 100..=0 {
-  putln(i)
-}
-```
-
-While loop examples. You can see, that `Geko` supports `continue` and `break` keywords
-```
-i := 0
-while true {
-  if i == 100 {
-    continue
-    i -= 200
-  }
-  i += 1
-  if i == -199 {
-    break
-  }
-}
-```
-
-### Logical statements
-If examples:
-
-```geko
-use convert
-
-a := readln()
-if convert.int(a) > 5 {
-  ...
-} else if convert.int(a) < 5 {
-  ...
-} else {
-  ...
-}
-```
-
-### Errors raising
-Bail immediately breaks execution with error:
-
-```geko
-bail "some text"
-```
-
-### Anonymous function
-`Geko` supports anonymous functions:
-
-```geko
-a := fun() -> 1
-b := fun(a) -> a + 1
-c := fun(a) {
-  return a + 1
-}
-putln(a())
-putln(b(1))
-putln(c(2))
-```
-
-### Enumerations
-`Geko` supports enumerations. Every variant is just an int variable inside `Dog`.
-
-```geko
-enum Dog {
-  Poodle,  # 0
-  Bulldog, # 1
-  Beagle,
-  Husky
-}
-
-dog := Dog.Poodle
-putln(dog == 0) # true
-putln(dog == Dog.Beagle) # false
-```
-
-### Traits
-`Geko` supports traits. Trait represents a behaviour description
-that classes can implemenet.
-
-```geko
-trait Pet {
-  fun feed(self, amount)
-}
-
-class Cat {
-  # Cat has method `feed`
-  fun feed(self, amount) {
-    self.food = amount;
-  }
-}
-
-class Toad {
-  # Toad doesn't have method `feed`, but `stroke`
-  fun stroke(self) {
-    println("Croak! Croak!");
-  }
-}
-
-cat := Cat();
-if cat >: Pet {
-  println("`Cat` impls `Pet`");
-}
-
-toad := Toad();
-if toad >! Pet {
-  println("`Toad` doesn't impl `Pet`");
-}
 ```

@@ -49,7 +49,6 @@ pub enum Opcode {
     MakeClass(String, HashMap<String, Ref<Function>>),
     MakeTrait(String, Vec<TraitFunction>),
     Import(String),
-    Raise,
 }
 
 /// Defines chunk label

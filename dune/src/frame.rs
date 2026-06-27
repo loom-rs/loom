@@ -104,7 +104,7 @@ impl Frame {
         }
     }
 
-    /// Pushes new operand to the stack
+    /// Pushes new operand onto the stack
     pub fn push(&mut self, value: Value) {
         self.stack.push(value)
     }

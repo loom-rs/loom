@@ -539,13 +539,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         }
     }
 
-    /// Executes return op
-    fn op_return(&mut self) {
-        let value = self.frame_mut().pop();
-        self.pop();
-        self.frame_mut().push(value);
-    }
-
     /// Checks params and arguments arity
     fn check_arity(&self, span: &Span, params: usize, args: usize) {
         // Checking arity
@@ -602,7 +595,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls closure
-    pub fn call_closure(&mut self, span: &Span, closure: Ref<Closure>, args: Vec<Value>) {
+    pub fn call_closure(&mut self, span: &Span, closure: Ref<Closure>, args: Vec<Value>) -> Value {
         // Checking arity
         self.check_arity(span, closure.function.params.len(), args.len());
 
@@ -616,22 +609,36 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             .iter()
             .zip(args)
             .for_each(|(p, a)| self.frame_mut().scope.borrow_mut().insert(p, a));
+
+        // Running loop
+        self.exec();
+
+        // Popping result
+        let result = self.frame_mut().pop();
+
+        // Popping frame
+        self.pop();
+
+        // Done!
+        result
     }
 
     /// Calls native function
-    pub fn call_native(&mut self, span: &Span, native: Ref<Native>, args: Vec<Value>) {
+    pub fn call_native(&mut self, span: &Span, native: Ref<Native>, args: Vec<Value>) -> Value {
         // Checking arity
         self.check_arity(span, native.arity, args.len());
 
         // Executing native function
-        let result = (*native.function)(self, span, args);
-
-        // Pushing result onto the stack
-        self.frame_mut().push(result);
+        (*native.function)(self, span, args)
     }
 
     /// Calls bound method
-    pub fn call_bound_method(&mut self, span: &Span, bound: Ref<Bound>, mut args: Vec<Value>) {
+    pub fn call_bound_method(
+        &mut self,
+        span: &Span,
+        bound: Ref<Bound>,
+        mut args: Vec<Value>,
+    ) -> Value {
         // Inserting `self` parameter
         args.insert(0, Value::Instance(bound.belongs_to.clone()));
 
@@ -643,14 +650,11 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
     }
 
     /// Calls type and creates instance
-    pub fn call_class(&mut self, span: &Span, class: Ref<Class>, args: Vec<Value>) {
+    pub fn call_class(&mut self, span: &Span, class: Ref<Class>, args: Vec<Value>) -> Value {
         // Creating instance
         let instance = self.create_instance(class);
 
-        // Pushing instance onto the stack
-        self.frame_mut().push(Value::Instance(instance.clone()));
-
-        // If `init` exists and it's a bound method, call it
+        // If `init` exists and it's a bound method, calling it
         if let Some(Value::Callable(Callable::Bound(bound))) = {
             // Temp borrow
             let borrow = instance.borrow();
@@ -662,10 +666,13 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             // Either no init or not a bound method -> check arity 0
             self.check_arity(span, 0, args.len());
         }
+
+        // Returning created instance
+        Value::Instance(instance)
     }
 
     /// Calls callable
-    pub fn call(&mut self, span: &Span, callable: Callable, args: Vec<Value>) {
+    pub fn call(&mut self, span: &Span, callable: Callable, args: Vec<Value>) -> Value {
         match callable {
             Callable::Closure(closure) => self.call_closure(span, closure, args),
             Callable::Bound(bound) => self.call_bound_method(span, bound, args),
@@ -688,7 +695,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let value = frame.pop();
 
         // Calling callable with args
-        match value {
+        let result = match value {
             // Calling
             Value::Callable(callable) => self.call(&span, callable, args),
             Value::Class(ty) => self.call_class(&span, ty, args),
@@ -697,7 +704,10 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 span: span.1.into(),
                 value
             }),
-        }
+        };
+
+        // Pushing result onto the stack
+        self.frame_mut().push(result);
     }
 
     /// Performs field access
@@ -927,71 +937,14 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         }));
         self.modules.insert(&id, module.clone());
 
-        // Pushing module onto stack
-        self.frame_mut().push(Value::Module(module));
-
         // Pushing frame
         self.push_with_scope(chunk, scope);
-    }
 
-    /// Unwinds stack by executing function on current frame.
-    /// If function returns `true`, stops unwinding.
-    /// Otherwise, the current frame is popped and the function is executed
-    /// again on the previous frame.
-    ///
-    /// Returns `true` on success and returns `false` when `stack.len()` is 0
-    pub fn unwind<F>(&mut self, f: F) -> bool
-    where
-        F: Fn(&mut VirtualMachine) -> bool,
-    {
-        // Getting last frame
-        match self.stack.last() {
-            Some(_) => {
-                // If function executes successfully
-                if f(self) {
-                    true
-                }
-                // If not
-                else {
-                    self.pop();
-                    self.unwind(f)
-                }
-            }
-            None => false,
-        }
-    }
+        // Executing module
+        self.exec();
 
-    /// Executes raise op
-    fn op_raise(&mut self) {
-        // Preparing error
-        let frame = self.frame_mut();
-        let span = frame.span();
-        let pending_error = frame.pop();
-
-        // Unwinding stack
-        let result = self.unwind(|vm| match vm.frame().handler() {
-            Some(handler) => {
-                let frame = vm.frame_mut();
-                let pc = frame.pc_of_label(handler.target);
-                frame.jump(pc);
-                true
-            }
-            None => false,
-        });
-
-        // If unwinding is succeed
-        if result {
-            // Pushing pending error onto stack
-            self.frame_mut().push(pending_error);
-        }
-        // Otherwise, raising unhandled error
-        else {
-            bail!(RuntimeError::UnhandledError {
-                error: pending_error,
-                src: span.0,
-                span: span.1.into()
-            })
-        }
+        // Pushing module onto stack
+        self.frame_mut().push(Value::Module(module));
     }
 
     /// Runs vm execution loop
@@ -1037,7 +990,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::JumpIfTrue(label) => self.op_jump_if_true(label),
                 Opcode::JumpIfFalse(label) => self.op_jump_if_false(label),
                 // Return operation
-                Opcode::Return => self.op_return(),
+                Opcode::Return => return,
                 // Call operation
                 Opcode::Call(arity) => self.op_call(arity),
                 // Field operations
@@ -1054,8 +1007,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::MakeTrait(name, functions) => self.op_make_trait(name, functions),
                 // Import operation
                 Opcode::Import(path) => self.op_import(path),
-                // Raise exception operation
-                Opcode::Raise => self.op_raise(),
             }
 
             // Switching to next instruction
