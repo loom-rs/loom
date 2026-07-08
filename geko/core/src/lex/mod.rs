@@ -350,7 +350,7 @@ impl<'s> Lexer<'s> {
         self.advance();
 
         // Eating comment before reaching new line
-        while self.current != Some('\n') {
+        while self.current != Some('\n') && !self.is_eof() {
             self.advance();
         }
     }
@@ -407,7 +407,7 @@ impl<'s> Lexer<'s> {
 
     /// Returns true if char is ` `, `\n`, `\t` or `\r`
     #[allow(clippy::match_like_matches_macro)]
-    fn is_whitespace(&mut self) -> bool {
+    fn is_whitespace(&self) -> bool {
         match self.current {
             Some(' ') | Some('\n') | Some('\t') | Some('\r') => true,
             _ => false,
@@ -416,7 +416,7 @@ impl<'s> Lexer<'s> {
 
     /// Returns `true` if char is letter or underscore
     #[allow(clippy::match_like_matches_macro)]
-    fn is_id_letter(&mut self) -> bool {
+    fn is_id_letter(&self) -> bool {
         match self.current {
             Some(it) if it.is_ascii_alphabetic() || it == '_' => true,
             _ => false,
@@ -425,7 +425,7 @@ impl<'s> Lexer<'s> {
 
     /// Returns `true` if current char is ascii digit
     #[allow(clippy::match_like_matches_macro)]
-    fn is_digit(&mut self) -> bool {
+    fn is_digit(&self) -> bool {
         match self.current {
             Some(it) if it.is_ascii_digit() => true,
             _ => false,
@@ -433,7 +433,7 @@ impl<'s> Lexer<'s> {
     }
 
     /// Returns `true` if `current` is `None`
-    fn is_eof(&mut self) -> bool {
+    fn is_eof(&self) -> bool {
         self.current.is_none()
     }
 }
@@ -470,7 +470,7 @@ impl<'s> Iterator for Lexer<'s> {
             (Some('&'), _) => Some(self.advance_with(TokenKind::Ampersand, "&")),
             (Some('|'), _) => Some(self.advance_with(TokenKind::Bar, "|")),
             (Some('^'), _) => Some(self.advance_with(TokenKind::Caret, "^")),
-            (Some('%'), _) => Some(self.advance_with(TokenKind::Percent, "^")),
+            (Some('%'), _) => Some(self.advance_with(TokenKind::Percent, "%")),
             (Some('+'), _) => Some(self.advance_with(TokenKind::Plus, "+")),
             (Some('-'), _) => Some(self.advance_with(TokenKind::Minus, "-")),
             (Some('*'), _) => Some(self.advance_with(TokenKind::Star, "*")),
