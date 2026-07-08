@@ -349,7 +349,7 @@ impl<'s> Lexer<'s> {
         // Eating `#`
         self.advance();
 
-        // Eating comment before reaching new line
+        // Eating comment before reaching new line or eof
         while self.current != Some('\n') && !self.is_eof() {
             self.advance();
         }
