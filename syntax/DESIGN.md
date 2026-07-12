@@ -67,7 +67,7 @@ Examples of the values:
 | float     | 123.456                     |
 | bool      | true / false                |
 | string    | "text"                      |
-| function  | fun(x, y) {} return x + y } |
+| function  | fun(x, y) { return x + y } |
 | class     | AnyDeclaredClass            |
 | enum      | AnyDeclaredEnum             |
 | instance  | AnyDeclaredClass()          |
