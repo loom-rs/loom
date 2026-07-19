@@ -7,10 +7,15 @@
 `Geko` is unstable, and currently a **work in progress project (WIP)**.  
 Nightly builds are available giving you a chance to explore and test the language as it evolves.
 
-#### 🏠 Quick Start
+#### 🏡 Quick Start
 ```geko
-putln("Hello, world!");
+putln("Hello, world!")
 ```
+
+#### 📦 Features
+- Lightweight
+- Clean syntax
+- Dynamically typed
 
 #### ✨ Examples
 ```geko
