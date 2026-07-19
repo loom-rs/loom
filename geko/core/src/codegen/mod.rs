@@ -158,7 +158,7 @@ impl CodeGenerator {
     }
 
     /// Performs list generation
-    fn gen_list(&mut self, span: Span, list: Vec<Expr>) {
+    fn gen_list(&mut self, span: Span, _: Vec<Expr>) {
         self.chunk()
             .insert(span.clone(), Opcode::LoadBuiltin("List".into()));
         self.chunk().insert(span.clone(), Opcode::Call(1));
@@ -166,7 +166,7 @@ impl CodeGenerator {
         todo!()
     }
 
-    /// Performs generation of fun
+    /// Performs generation of anonymous function
     fn gen_anon_function(&mut self, span: Span, params: Vec<String>, block: Block) {
         // Generating body
         self.push_chunk();
