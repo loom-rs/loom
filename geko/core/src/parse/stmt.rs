@@ -251,20 +251,19 @@ impl<'s> Parser<'s> {
 
     /// Break Stmt
     fn break_stmt(&mut self) -> Stmt {
-        let span = self.expect(TokenKind::Break).span;
+        let span = self.bump().span;
         Stmt::Break(span)
     }
 
     /// Continue Stmt
     fn continue_stmt(&mut self) -> Stmt {
-        let span = self.expect(TokenKind::Continue).span;
+        let span = self.bump().span;
         Stmt::Continue(span)
     }
 
     /// Return Stmt
     fn return_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
-        self.expect(TokenKind::Return);
+        let start_span = self.bump().span.clone();
         let value = self.expr();
         let end_span = self.prev().span.clone();
 
@@ -300,8 +299,7 @@ impl<'s> Parser<'s> {
 
     /// Use Stmt
     fn use_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
-        self.expect(TokenKind::Use);
+        let start_span = self.bump().span.clone();
         let path = self.expect(TokenKind::String).lexeme;
         let kind = self.use_kind();
         let end_span = self.prev().span.clone();
