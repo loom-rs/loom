@@ -189,7 +189,7 @@ impl<'s> Parser<'s> {
             let op = self.bump();
             let value = self.unary_expr();
             let end_span = self.prev().span.clone();
-            return Expr::Un {
+            Expr::Un {
                 span: start_span.clone() + end_span,
                 op: match op.kind {
                     TokenKind::Minus => UnOp::Neg,
@@ -197,9 +197,10 @@ impl<'s> Parser<'s> {
                     _ => unreachable!(),
                 },
                 value: Box::new(value),
-            };
+            }
+        } else {
+            self.atom_expr()
         }
-        self.atom_expr()
     }
 
     /// Factor expression parsing
