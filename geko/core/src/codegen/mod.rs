@@ -204,7 +204,7 @@ impl CodeGenerator {
             Expr::Call { span, callee, args } => self.gen_call(span, *callee, args),
             Expr::List { span, list } => self.gen_list(span, list),
             Expr::Dict { span, dict } => todo!(),
-            Expr::Fun {
+            Expr::Function {
                 span,
                 params,
                 block,

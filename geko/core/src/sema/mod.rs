@@ -172,7 +172,7 @@ impl Analyzer {
                 self.analyze_expr(v);
             }),
             // Analyzing anonymous function (lambda)
-            Expr::Fun { block, .. } => {
+            Expr::Function { block, .. } => {
                 self.stack.push(ScopeKind::Function);
                 self.analyze_block(block);
                 self.stack.pop();

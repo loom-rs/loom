@@ -126,7 +126,7 @@ impl<'s> Parser<'s> {
         };
 
         let end_span = self.prev().span.clone();
-        Expr::Fun {
+        Expr::Function {
             span: start_span + end_span,
             params,
             block,

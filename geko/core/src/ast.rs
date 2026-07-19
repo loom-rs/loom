@@ -189,7 +189,7 @@ pub enum Expr {
         dict: Vec<(Expr, Expr)>,
     },
     /// Anonymous function expression
-    Fun {
+    Function {
         span: Span,
         params: Vec<String>,
         block: Block,
