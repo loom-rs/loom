@@ -365,7 +365,7 @@ impl<'s> Parser<'s> {
         let start_span = self.peek().span.clone();
         let mut left = self.equality_expr();
 
-        while self.check(TokenKind::Ampersand) {
+        while self.check(TokenKind::Amp) {
             self.bump();
             let right = self.equality_expr();
             let end_span = self.prev().span.clone();

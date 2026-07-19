@@ -34,7 +34,7 @@ pub enum TokenKind {
     Slash,     // /
     Percent,   // %
     Caret,     // ^
-    Ampersand, // &
+    Amp,       // &
     Bang,      // !
     Bar,       // |
     Eq,        // =
