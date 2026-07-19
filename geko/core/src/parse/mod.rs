@@ -52,7 +52,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Parses module
+    /// Parses program
     pub fn parse(&mut self) -> Block {
         // If end of file
         if self.current.is_none() {
@@ -78,7 +78,8 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Sep by parsing
+    /// Parses a series of items using `parse_item`
+    /// separated by `sep`
     pub(crate) fn sep_by<T>(
         &mut self,
         open: TokenKind,
@@ -107,7 +108,8 @@ impl<'s> Parser<'s> {
         items
     }
 
-    /// Arguments parsing
+    /// Parses arguments enclosed in parens
+    /// separated by comma
     pub(crate) fn args(&mut self) -> Vec<Expr> {
         self.sep_by(
             TokenKind::Lparen,
@@ -117,7 +119,8 @@ impl<'s> Parser<'s> {
         )
     }
 
-    /// Parameters parsing
+    /// Parses parameters enclosed in parens
+    /// separated by comma
     pub(crate) fn params(&mut self) -> Vec<String> {
         self.sep_by(
             TokenKind::Lparen,
@@ -127,7 +130,7 @@ impl<'s> Parser<'s> {
         )
     }
 
-    /// Checks token match
+    /// Compares current token kind with passed one
     pub fn check(&self, tk: TokenKind) -> bool {
         match &self.current {
             Some(it) => it.kind == tk,
@@ -135,7 +138,8 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Retrieves current token
+    /// Returns current token.
+    /// Bails if current token is `None`.
     pub fn peek(&self) -> &Token {
         match &self.current {
             Some(tk) => tk,
@@ -147,7 +151,8 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Retrieves previous token
+    /// Returns previous token.
+    /// Bails if previous token is `None`.
     pub fn prev(&self) -> &Token {
         match &self.previous {
             Some(tk) => tk,
@@ -159,7 +164,8 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Expects token with kind
+    /// Compares current token kind with expected one
+    /// Bails if current token is `None` and on token kinds missmatch.
     pub fn expect(&mut self, tk: TokenKind) -> Token {
         match &self.current {
             Some(it) => {
