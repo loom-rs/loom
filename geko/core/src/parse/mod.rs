@@ -183,7 +183,12 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// Advances current token
+    /// Bumps current token. Does following:
+    ///
+    /// 1. Take `current` token and move to `previous`
+    /// 2. Take `next` token and move to `current`
+    /// 3. Get a new token for `next` from lexer
+    ///
     pub fn bump(&mut self) -> Token {
         self.previous = self.current.take();
         self.current = self.next.take();
