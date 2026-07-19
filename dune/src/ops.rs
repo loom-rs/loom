@@ -37,6 +37,7 @@ pub enum Opcode {
     JumpIfTrue(Label),
     JumpIfFalse(Label),
     Return,
+    LoadBuiltin(String),
     Load(String),
     Store(String),
     Define(String),

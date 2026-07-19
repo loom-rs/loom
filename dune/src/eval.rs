@@ -716,6 +716,66 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.frame_mut().push(result);
     }
 
+    /// Executes load builtin op
+    fn op_load_builtin(&mut self, name: String) {
+        let value = if let Some(value) = self.builtins.borrow().lookup(&name) {
+            value
+        } else {
+            let span = self.frame().span();
+            bail!(RuntimeError::UndefinedVariable {
+                name,
+                src: span.0,
+                span: span.1.into()
+            })
+        };
+
+        self.frame_mut().push(value);
+    }
+
+    /// Executes load op
+    fn op_load(&mut self, name: String) {
+        let value = if let Some(value) = self.frame_mut().scope.borrow().lookup(&name) {
+            value
+        } else if let Some(value) = self.builtins.borrow().lookup(&name) {
+            value
+        } else {
+            let span = self.frame().span();
+            bail!(RuntimeError::UndefinedVariable {
+                name,
+                src: span.0,
+                span: span.1.into()
+            })
+        };
+
+        self.frame_mut().push(value);
+    }
+
+    /// Executes store op
+    fn op_store(&mut self, name: String) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+        let value = frame.pop();
+
+        let mut scope = frame.scope.borrow_mut();
+        if scope.exists(&name) {
+            scope.insert(&name, value);
+        } else {
+            bail!(RuntimeError::UndefinedVariable {
+                name,
+                src: span.0,
+                span: span.1.into()
+            })
+        }
+    }
+
+    /// Executes define op
+    fn op_define(&mut self, name: String) {
+        let frame = self.frame_mut();
+        let value = frame.pop();
+        let mut scope = frame.scope.borrow_mut();
+        scope.insert(&name, value);
+    }
+
     /// Performs field access
     pub(crate) fn access_field(span: &Span, container: Value, name: &str) -> Value {
         // Matching container
@@ -844,50 +904,6 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         Self::define_field(&span, container, &field, value)
     }
 
-    /// Executes load op
-    fn op_load(&mut self, name: String) {
-        let value = if let Some(value) = self.frame_mut().scope.borrow().lookup(&name) {
-            value
-        } else if let Some(value) = self.builtins.borrow().lookup(&name) {
-            value
-        } else {
-            let span = self.frame().span();
-            bail!(RuntimeError::UndefinedVariable {
-                name,
-                src: span.0,
-                span: span.1.into()
-            })
-        };
-
-        self.frame_mut().push(value);
-    }
-
-    /// Executes store op
-    fn op_store(&mut self, name: String) {
-        let frame = self.frame_mut();
-        let span = frame.span();
-        let value = frame.pop();
-
-        let mut scope = frame.scope.borrow_mut();
-        if scope.exists(&name) {
-            scope.insert(&name, value);
-        } else {
-            bail!(RuntimeError::UndefinedVariable {
-                name,
-                src: span.0,
-                span: span.1.into()
-            })
-        }
-    }
-
-    /// Executes define op
-    fn op_define(&mut self, name: String) {
-        let frame = self.frame_mut();
-        let value = frame.pop();
-        let mut scope = frame.scope.borrow_mut();
-        scope.insert(&name, value);
-    }
-
     /// Executes make closure op
     fn op_make_closure(&mut self, function: Ref<Function>) {
         let callable = Value::Callable(Callable::Closure(Ref::new(Closure {
@@ -999,14 +1015,16 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Return => return,
                 // Call operation
                 Opcode::Call(arity) => self.op_call(arity),
-                // Field operations
-                Opcode::LoadField(field) => self.op_load_field(field),
-                Opcode::StoreField(field) => self.op_store_field(field),
-                Opcode::DefineField(field) => self.op_define_field(field),
+                // Load builtin operation
+                Opcode::LoadBuiltin(name) => self.op_load_builtin(name),
                 // Load/store/define operations
                 Opcode::Load(name) => self.op_load(name),
                 Opcode::Store(name) => self.op_store(name),
                 Opcode::Define(name) => self.op_define(name),
+                // Field operations
+                Opcode::LoadField(field) => self.op_load_field(field),
+                Opcode::StoreField(field) => self.op_store_field(field),
+                Opcode::DefineField(field) => self.op_define_field(field),
                 // Make operations
                 Opcode::MakeClosure(function) => self.op_make_closure(function),
                 Opcode::MakeClass(name, methods) => self.op_make_class(name, methods),

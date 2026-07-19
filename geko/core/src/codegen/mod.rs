@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 /// Imports
 use crate::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use common::{bug, span::Span};
 use dune::{
     ops::{Chunk, Label, Opcode},
     refs::Ref,
-    value::{Class, Function, Method, Value},
+    value::{Function, Value},
 };
 
 /// Defines loop labels information
@@ -159,6 +157,38 @@ impl CodeGenerator {
         self.chunk().insert(span, Opcode::Call(arity));
     }
 
+    /// Performs list generation
+    fn gen_list(&mut self, span: Span, list: Vec<Expr>) {
+        self.chunk()
+            .insert(span.clone(), Opcode::LoadBuiltin("List".into()));
+        self.chunk().insert(span.clone(), Opcode::Call(1));
+
+        todo!()
+    }
+
+    /// Performs generation of fun
+    fn gen_anon_function(&mut self, span: Span, params: Vec<String>, block: Block) {
+        // Generating body
+        self.push_chunk();
+        self.gen_block(block);
+
+        // Return null by default
+        self.chunk().insert(span.clone(), Opcode::Push(Value::Null));
+        self.chunk().insert(span.clone(), Opcode::Return);
+
+        // Done!
+        let chunk = Ref::new(self.pop_chunk());
+
+        // Generating `MakeClosure` and function define
+        self.chunk().insert(
+            span,
+            Opcode::MakeClosure(Ref::new(Function {
+                params: params,
+                chunk: chunk,
+            })),
+        );
+    }
+
     /// Performs generation of expression
     fn gen_expr(&mut self, expr: Expr) {
         match expr {
@@ -172,13 +202,13 @@ impl CodeGenerator {
                 container,
             } => self.gen_field(span, name, *container),
             Expr::Call { span, callee, args } => self.gen_call(span, *callee, args),
-            Expr::List { span, list } => todo!(),
+            Expr::List { span, list } => self.gen_list(span, list),
             Expr::Dict { span, dict } => todo!(),
             Expr::Fun {
                 span,
                 params,
                 block,
-            } => todo!(),
+            } => self.gen_anon_function(span, params, block),
             Expr::Range {
                 span,
                 lhs,

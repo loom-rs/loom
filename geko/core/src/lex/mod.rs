@@ -453,7 +453,7 @@ impl<'s> Iterator for Lexer<'s> {
             (Some('*'), Some('=')) => Some(self.advance_twice_with(TokenKind::StarEq, "*=")),
             (Some('/'), Some('=')) => Some(self.advance_twice_with(TokenKind::SlashEq, "/=")),
             (Some('%'), Some('=')) => Some(self.advance_twice_with(TokenKind::PercentEq, "%=")),
-            (Some('&'), Some('=')) => Some(self.advance_twice_with(TokenKind::AmpersandEq, "&=")),
+            (Some('&'), Some('=')) => Some(self.advance_twice_with(TokenKind::AmpEq, "&=")),
             (Some('|'), Some('=')) => Some(self.advance_twice_with(TokenKind::BarEq, "|=")),
             (Some('^'), Some('=')) => Some(self.advance_twice_with(TokenKind::CaretEq, "^=")),
             (Some('&'), Some('&')) => Some(self.advance_twice_with(TokenKind::DoubleAmp, "&&")),

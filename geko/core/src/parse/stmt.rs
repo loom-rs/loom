@@ -217,7 +217,7 @@ impl<'s> Parser<'s> {
             Some(TokenKind::StarEq) => Some(AssignOp::Mul),
             Some(TokenKind::SlashEq) => Some(AssignOp::Div),
             Some(TokenKind::PercentEq) => Some(AssignOp::Mod),
-            Some(TokenKind::AmpersandEq) => Some(AssignOp::BitAnd),
+            Some(TokenKind::AmpEq) => Some(AssignOp::BitAnd),
             Some(TokenKind::BarEq) => Some(AssignOp::BitOr),
             Some(TokenKind::CaretEq) => Some(AssignOp::Xor),
             Some(TokenKind::Eq) => Some(AssignOp::Assign),

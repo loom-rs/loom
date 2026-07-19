@@ -5,66 +5,66 @@ use std::fmt::Debug;
 /// Represents token kind
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub enum TokenKind {
-    For,         // `for` keyword
-    While,       // `while` keyword
-    In,          // `in` keyword
-    Use,         // `use` keyword
-    Class,       // `class` keyword
-    Enum,        // `enum` keyword
-    If,          // `if` keyword
-    Else,        // `else` keyword
-    Return,      // `return` keyword
-    Continue,    // `continue` keyword
-    Break,       // `break` keyword
-    As,          // `as` keyword
-    Fun,         // `fun` keyword
-    Trait,       // `trait` keyword
-    Pick,        // `pick` keyword
-    Comma,       // ,
-    Dot,         // .
-    Lbrace,      // {
-    Rbrace,      // }
-    Lparen,      // (
-    Rparen,      // )
-    Lbracket,    // [
-    Rbracket,    // ]
-    Plus,        // +
-    Minus,       // -
-    Star,        // *
-    Slash,       // /
-    Percent,     // %
-    Caret,       // ^
-    Ampersand,   // &
-    Bang,        // !
-    Bar,         // |
-    Eq,          // =
-    Ge,          // >=
-    Le,          // <=
-    Gt,          // >
-    GtColon,     // >:
-    GtBang,      // >!
-    Arrow,       // ->
-    Lt,          // <
-    Colon,       // :
-    Walrus,      // :=
-    DoubleEq,    // ==
-    DoubleBar,   // ||
-    DoubleAmp,   // &&
-    BangEq,      // !=
-    PlusEq,      // +=
-    MinusEq,     // -=
-    StarEq,      // *=
-    SlashEq,     // /=
-    CaretEq,     // ^=
-    PercentEq,   // %=
-    BarEq,       // |=
-    AmpersandEq, // &=
-    DoubleDot,   // ..
-    Number,      // any number
-    String,      // "quoted text"
-    Id,          // identifier
-    Bool,        // bool
-    Null,        // null
+    For,       // `for` keyword
+    While,     // `while` keyword
+    In,        // `in` keyword
+    Use,       // `use` keyword
+    Class,     // `class` keyword
+    Enum,      // `enum` keyword
+    If,        // `if` keyword
+    Else,      // `else` keyword
+    Return,    // `return` keyword
+    Continue,  // `continue` keyword
+    Break,     // `break` keyword
+    As,        // `as` keyword
+    Fun,       // `fun` keyword
+    Trait,     // `trait` keyword
+    Pick,      // `pick` keyword
+    Comma,     // ,
+    Dot,       // .
+    Lbrace,    // {
+    Rbrace,    // }
+    Lparen,    // (
+    Rparen,    // )
+    Lbracket,  // [
+    Rbracket,  // ]
+    Plus,      // +
+    Minus,     // -
+    Star,      // *
+    Slash,     // /
+    Percent,   // %
+    Caret,     // ^
+    Ampersand, // &
+    Bang,      // !
+    Bar,       // |
+    Eq,        // =
+    Ge,        // >=
+    Le,        // <=
+    Gt,        // >
+    GtColon,   // >:
+    GtBang,    // >!
+    Arrow,     // ->
+    Lt,        // <
+    Colon,     // :
+    Walrus,    // :=
+    DoubleEq,  // ==
+    DoubleBar, // ||
+    DoubleAmp, // &&
+    BangEq,    // !=
+    PlusEq,    // +=
+    MinusEq,   // -=
+    StarEq,    // *=
+    SlashEq,   // /=
+    CaretEq,   // ^=
+    PercentEq, // %=
+    BarEq,     // |=
+    AmpEq,     // &=
+    DoubleDot, // ..
+    Number,    // any number
+    String,    // "quoted text"
+    Id,        // identifier
+    Bool,      // bool
+    Null,      // null
 }
 
 /// Represents token
