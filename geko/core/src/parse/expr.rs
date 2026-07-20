@@ -1,5 +1,5 @@
 /// Imports
-use crate::ast::{BinOp, Block, Expr, Lit, Stmt, UnOp};
+use crate::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use crate::lex::token::TokenKind;
 use crate::parse::{Parser, errors::ParseError};
 use common::bail;
@@ -461,8 +461,50 @@ impl<'s> Parser<'s> {
         left
     }
 
+    /// Assign expression parsing
+    fn assign_expr(&mut self) -> Expr {
+        let start_span = self.peek().span.clone();
+        let mut left = self.logical_or_expr();
+
+        while self.check(TokenKind::PlusEq)
+            | self.check(TokenKind::MinusEq)
+            | self.check(TokenKind::StarEq)
+            | self.check(TokenKind::SlashEq)
+            | self.check(TokenKind::PercentEq)
+            | self.check(TokenKind::AmpEq)
+            | self.check(TokenKind::BarEq)
+            | self.check(TokenKind::CaretEq)
+            | self.check(TokenKind::Eq)
+            | self.check(TokenKind::Walrus)
+        {
+            let op = self.bump();
+            let right = self.logical_or_expr();
+            let end_span = self.prev().span.clone();
+            left = Expr::Assign {
+                span: start_span.clone() + end_span,
+                what: Box::new(left),
+                op: match op.kind {
+                    TokenKind::PlusEq => AssignOp::Add,
+                    TokenKind::MinusEq => AssignOp::Sub,
+                    TokenKind::StarEq => AssignOp::Mul,
+                    TokenKind::SlashEq => AssignOp::Div,
+                    TokenKind::PercentEq => AssignOp::Mod,
+                    TokenKind::AmpEq => AssignOp::BitAnd,
+                    TokenKind::BarEq => AssignOp::BitOr,
+                    TokenKind::CaretEq => AssignOp::Xor,
+                    TokenKind::Eq => AssignOp::Assign,
+                    TokenKind::Walrus => AssignOp::Define,
+                    _ => unreachable!(),
+                },
+                value: Box::new(right),
+            }
+        }
+
+        left
+    }
+
     /// Parses expression
     pub fn expr(&mut self) -> Expr {
-        self.logical_or_expr()
+        self.assign_expr()
     }
 }

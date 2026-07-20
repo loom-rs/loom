@@ -134,6 +134,151 @@ impl CodeGenerator {
         );
     }
 
+    /// Performs generation of variable assign
+    pub fn gen_variable_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
+        // Generating value
+        self.gen_expr(value);
+
+        // Matching operator
+        match op {
+            AssignOp::Define => {
+                // Duplicate value
+                self.chunk().insert(span.clone(), Opcode::Dup);
+
+                // Define variable
+                self.chunk().insert(span, Opcode::Define(name));
+            }
+            AssignOp::Assign => {
+                // Duplicate value
+                self.chunk().insert(span.clone(), Opcode::Dup);
+
+                // Store variable
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+            AssignOp::Add
+            | AssignOp::Sub
+            | AssignOp::Mul
+            | AssignOp::Div
+            | AssignOp::Mod
+            | AssignOp::BitAnd
+            | AssignOp::BitOr
+            | AssignOp::Xor => {
+                // Calculate value
+                self.chunk()
+                    .insert(span.clone(), Opcode::Load(name.clone()));
+                self.chunk().insert(
+                    span.clone(),
+                    match op {
+                        AssignOp::Add => Opcode::Add,
+                        AssignOp::Sub => Opcode::Sub,
+                        AssignOp::Mul => Opcode::Mul,
+                        AssignOp::Div => Opcode::Div,
+                        AssignOp::Mod => Opcode::Rem,
+                        AssignOp::BitAnd => Opcode::Band,
+                        AssignOp::BitOr => Opcode::Bor,
+                        AssignOp::Xor => Opcode::Xor,
+                        _ => unreachable!(),
+                    },
+                );
+
+                // Duplicate value
+                self.chunk().insert(span.clone(), Opcode::Dup);
+
+                // Store variable
+                self.chunk().insert(span, Opcode::Store(name));
+            }
+        }
+    }
+
+    /// Performs generation of field assign
+    pub fn gen_field_assign(
+        &mut self,
+        span: Span,
+        container: Expr,
+        name: String,
+        op: AssignOp,
+        value: Expr,
+    ) {
+        // Matching operator
+        match op {
+            AssignOp::Define => {
+                // Generating value
+                self.gen_expr(value);
+
+                // Duplicate value
+                self.chunk().insert(span.clone(), Opcode::Dup);
+
+                // Generating container
+                self.gen_expr(container);
+
+                // Defining field
+                self.chunk().insert(span, Opcode::DefineField(name));
+            }
+            AssignOp::Assign => {
+                // Generating value
+                self.gen_expr(value);
+
+                // Duplicate value
+                self.chunk().insert(span.clone(), Opcode::Dup);
+
+                // Generating container
+                self.gen_expr(container);
+
+                // Store field
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+            AssignOp::Add
+            | AssignOp::Sub
+            | AssignOp::Mul
+            | AssignOp::Div
+            | AssignOp::Mod
+            | AssignOp::BitAnd
+            | AssignOp::BitOr
+            | AssignOp::Xor => {
+                // Load field
+                self.gen_expr(container.clone());
+                self.chunk()
+                    .insert(span.clone(), Opcode::LoadField(name.clone()));
+
+                // Calculate value
+                self.gen_expr(value);
+                self.chunk().insert(
+                    span.clone(),
+                    match op {
+                        AssignOp::Add => Opcode::Add,
+                        AssignOp::Sub => Opcode::Sub,
+                        AssignOp::Mul => Opcode::Mul,
+                        AssignOp::Div => Opcode::Div,
+                        AssignOp::Mod => Opcode::Rem,
+                        AssignOp::BitAnd => Opcode::Band,
+                        AssignOp::BitOr => Opcode::Bor,
+                        AssignOp::Xor => Opcode::Xor,
+                        _ => unreachable!(),
+                    },
+                );
+
+                // Duplicate value
+                self.chunk().insert(span.clone(), Opcode::Dup);
+
+                // Store field
+                self.gen_expr(container);
+                self.chunk().insert(span, Opcode::StoreField(name));
+            }
+        }
+    }
+
+    /// Performs generation of assign
+    pub fn gen_assign(&mut self, span: Span, what: Expr, op: AssignOp, value: Expr) {
+        // Matching lhs
+        match what {
+            Expr::Variable { name, .. } => self.gen_variable_assign(span.clone(), name, op, value),
+            Expr::Field {
+                name, container, ..
+            } => self.gen_field_assign(span.clone(), *container, name, op, value),
+            _ => bug!("invalid assign lhs"),
+        }
+    }
+
     /// Performs generation of variable access
     fn gen_variable(&mut self, span: Span, name: String) {
         self.chunk().insert(span, Opcode::Load(name));
@@ -195,6 +340,12 @@ impl CodeGenerator {
             Expr::Lit { span, lit } => self.gen_lit(span, lit),
             Expr::Bin { span, op, lhs, rhs } => self.gen_bin(span, op, *lhs, *rhs),
             Expr::Un { span, op, value } => self.gen_un(span, op, *value),
+            Expr::Assign {
+                span,
+                what,
+                op,
+                value,
+            } => self.gen_assign(span, *what, op, *value),
             Expr::Variable { span, name } => self.gen_variable(span, name),
             Expr::Field {
                 span,
@@ -269,174 +420,6 @@ impl CodeGenerator {
         let end_pc = self.chunk().insert(span, Opcode::Nop);
         self.chunk().patch_label(else_label, else_pc);
         self.chunk().patch_label(end_label, end_pc);
-    }
-
-    /// Performs generation of variable assign
-    pub fn gen_variable_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
-        match op {
-            AssignOp::Define => {
-                self.gen_expr(value);
-                self.chunk().insert(span, Opcode::Define(name));
-            }
-            AssignOp::Assign => {
-                self.gen_expr(value);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::Add => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Add);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::Sub => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Sub);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::Mul => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Mul);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::Div => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Div);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::Mod => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Rem);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::BitAnd => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Band);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::BitOr => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Bor);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-            AssignOp::Xor => {
-                self.chunk()
-                    .insert(span.clone(), Opcode::Load(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Xor);
-                self.chunk().insert(span, Opcode::Store(name));
-            }
-        }
-    }
-
-    /// Performs generation of field assign
-    pub fn gen_field_assign(
-        &mut self,
-        span: Span,
-        container: Expr,
-        name: String,
-        op: AssignOp,
-        value: Expr,
-    ) {
-        self.gen_expr(container);
-        match op {
-            AssignOp::Define => {
-                self.gen_expr(value);
-                self.chunk().insert(span, Opcode::DefineField(name));
-            }
-            AssignOp::Assign => {
-                self.gen_expr(value);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::Add => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Add);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::Sub => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Sub);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::Mul => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Mul);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::Div => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Div);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::Mod => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Rem);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::BitAnd => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Band);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::BitOr => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Bor);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-            AssignOp::Xor => {
-                self.chunk().insert(span.clone(), Opcode::Dup);
-                self.chunk()
-                    .insert(span.clone(), Opcode::LoadField(name.clone()));
-                self.gen_expr(value);
-                self.chunk().insert(span.clone(), Opcode::Xor);
-                self.chunk().insert(span, Opcode::StoreField(name));
-            }
-        }
-    }
-
-    /// Performs generation of assign
-    pub fn gen_assign(&mut self, span: Span, what: Expr, op: AssignOp, value: Expr) {
-        // Matching lhs
-        match what {
-            Expr::Variable { name, .. } => self.gen_variable_assign(span, name, op, value),
-            Expr::Field {
-                name, container, ..
-            } => self.gen_field_assign(span, *container, name, op, value),
-            _ => bug!("invalid assign lhs"),
-        }
     }
 
     /// Performs genertion of function
@@ -530,12 +513,6 @@ impl CodeGenerator {
             Stmt::Enum(_) => todo!(),
             Stmt::Trait(_) => todo!(),
             Stmt::Function(function) => self.gen_function(function),
-            Stmt::Assign {
-                span,
-                what,
-                op,
-                value,
-            } => self.gen_assign(span, what, op, value),
             Stmt::Return { span, value } => self.gen_return(span, value),
             Stmt::Continue(span) => todo!(),
             Stmt::Break(span) => todo!(),

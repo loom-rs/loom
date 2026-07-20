@@ -35,6 +35,17 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         frame.push(value);
     }
 
+    /// Executes swap op
+    fn op_swap(&mut self) {
+        let frame = self.frame_mut();
+
+        let lhs = frame.pop();
+        let rhs = frame.pop();
+
+        frame.push(lhs);
+        frame.push(rhs);
+    }
+
     /// Executes add op
     fn op_add(&mut self) {
         let frame = self.frame_mut();
@@ -879,6 +890,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let span = frame.span();
         let container = frame.pop();
+
         frame.push(Self::access_field(&span, container, &field))
     }
 
@@ -887,8 +899,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let span = frame.span();
 
-        let value = frame.pop();
         let container = frame.pop();
+        let value = frame.pop();
 
         Self::set_field(&span, container, &field, value)
     }
@@ -898,8 +910,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let span = frame.span();
 
-        let value = frame.pop();
         let container = frame.pop();
+        let value = frame.pop();
 
         Self::define_field(&span, container, &field, value)
     }
@@ -981,6 +993,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Pop => self.op_pop(),
                 // Dups value on the stack
                 Opcode::Dup => self.op_dup(),
+                // Swaps values on the stack
+                Opcode::Swap => self.op_swap(),
                 // Arithmetical operations
                 Opcode::Add => self.op_add(),
                 Opcode::Sub => self.op_sub(),

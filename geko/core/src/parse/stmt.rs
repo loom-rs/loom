@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    ast::{AssignOp, Block, Class, Enum, Function, Stmt, Trait, TraitFunction, UseKind},
+    ast::{Block, Class, Enum, Function, Stmt, Trait, TraitFunction, UseKind},
     lex::token::TokenKind,
     parse::Parser,
 };
@@ -204,51 +204,6 @@ impl<'s> Parser<'s> {
         })
     }
 
-    /// Assignment Stmt
-    fn assign_stmt(&mut self) -> Stmt {
-        // Parsing lhs
-        let start_span = self.peek().span.clone();
-        let lhs = self.variable_expr();
-
-        // Checking for ssignment operator
-        let op = match self.current.clone().map(|it| it.kind) {
-            Some(TokenKind::PlusEq) => Some(AssignOp::Add),
-            Some(TokenKind::MinusEq) => Some(AssignOp::Sub),
-            Some(TokenKind::StarEq) => Some(AssignOp::Mul),
-            Some(TokenKind::SlashEq) => Some(AssignOp::Div),
-            Some(TokenKind::PercentEq) => Some(AssignOp::Mod),
-            Some(TokenKind::AmpEq) => Some(AssignOp::BitAnd),
-            Some(TokenKind::BarEq) => Some(AssignOp::BitOr),
-            Some(TokenKind::CaretEq) => Some(AssignOp::Xor),
-            Some(TokenKind::Eq) => Some(AssignOp::Assign),
-            Some(TokenKind::Walrus) => Some(AssignOp::Define),
-            Some(_) => None,
-            _ => return Stmt::Expr(lhs),
-        };
-
-        // Checking assignment operator existence
-        match op {
-            // If operator found
-            Some(op) => {
-                // Bumping operator
-                self.bump();
-
-                // Parsing rhs
-                let rhs = self.expr();
-                let end_span = self.prev().span.clone();
-
-                Stmt::Assign {
-                    span: start_span + end_span,
-                    what: lhs,
-                    op,
-                    value: rhs,
-                }
-            }
-            // Else
-            None => Stmt::Expr(lhs),
-        }
-    }
-
     /// Break Stmt
     fn break_stmt(&mut self) -> Stmt {
         let span = self.bump().span;
@@ -324,7 +279,6 @@ impl<'s> Parser<'s> {
             TokenKind::Return => self.return_stmt(),
             TokenKind::Continue => self.continue_stmt(),
             TokenKind::Break => self.break_stmt(),
-            TokenKind::Id => self.assign_stmt(),
             TokenKind::Use => self.use_stmt(),
             _ => Stmt::Expr(self.expr()),
         }

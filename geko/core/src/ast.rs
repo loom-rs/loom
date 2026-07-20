@@ -161,6 +161,13 @@ pub enum Expr {
         op: UnOp,
         value: Box<Expr>,
     },
+    // Assignment expression
+    Assign {
+        span: Span,
+        what: Box<Expr>,
+        op: AssignOp,
+        value: Box<Expr>,
+    },
     // Variable access
     Variable {
         span: Span,
@@ -247,13 +254,6 @@ pub enum Stmt {
     Trait(Trait),
     // Function declaration
     Function(Function),
-    // Assignment declaration
-    Assign {
-        span: Span,
-        what: Expr,
-        op: AssignOp,
-        value: Expr,
-    },
     // Return statement
     Return {
         span: Span,

@@ -13,6 +13,7 @@ pub enum Opcode {
     Push(Value),
     Pop,
     Dup,
+    Swap,
     Add,
     Sub,
     Mul,

@@ -123,22 +123,6 @@ impl Analyzer {
                     })
                 }
             }
-            // Analyzing assignment statement
-            Stmt::Assign {
-                span, what, value, ..
-            } => {
-                // Matching lhs
-                if !matches!(what, Expr::Variable { .. } | Expr::Field { .. }) {
-                    bail!(SemaError::InvalidAssignLhs {
-                        src: span.0.clone(),
-                        span: span.1.clone().into()
-                    })
-                }
-
-                // Analyzing expressions
-                self.analyze_expr(what);
-                self.analyze_expr(value);
-            }
             // Analyzing expr statement
             Stmt::Expr(expr) => self.analyze_expr(expr),
             // Skipping use, enum, trait statements
@@ -156,6 +140,22 @@ impl Analyzer {
                 self.analyze_expr(rhs);
             }
             Expr::Un { value, .. } => self.analyze_expr(value),
+            // Analyzing assignment expression
+            Expr::Assign {
+                span, what, value, ..
+            } => {
+                // Matching lhs
+                if !matches!(**what, Expr::Variable { .. } | Expr::Field { .. }) {
+                    bail!(SemaError::InvalidAssignLhs {
+                        src: span.0.clone(),
+                        span: span.1.clone().into()
+                    })
+                }
+
+                // Analyzing expressions
+                self.analyze_expr(what);
+                self.analyze_expr(value);
+            }
             // Analyzing field container
             Expr::Field { container, .. } => self.analyze_expr(container),
             // Analyzing arguments and callee

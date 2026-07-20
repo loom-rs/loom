@@ -16,3 +16,4 @@ battery.energy = 70 # you can assign fields
 battery.voltage := 2 # you can declare new fields
 battery.charge(20) # you can call methods
 putln(battery.energy)
+putln(battery.energy *= 2)
