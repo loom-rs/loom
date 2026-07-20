@@ -36,9 +36,8 @@ impl<'s> Parser<'s> {
 
     /// For Stmt parsing
     fn for_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
+        let start_span = self.bump().span.clone();
 
-        self.expect(TokenKind::For);
         let var = self.expect(TokenKind::Id).lexeme;
         self.expect(TokenKind::In);
         let iterable = self.expr();
@@ -56,9 +55,8 @@ impl<'s> Parser<'s> {
 
     /// While Stmt parsing
     fn while_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
+        let start_span = self.bump().span.clone();
 
-        self.expect(TokenKind::While);
         let condition = self.expr();
         let block = self.block();
 
@@ -83,10 +81,8 @@ impl<'s> Parser<'s> {
 
     /// If Stmt parsing
     fn if_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
-
         // Parsing if clause
-        self.expect(TokenKind::If);
+        let start_span = self.bump().span.clone();
         let condition = self.expr();
         let then = self.block();
 
@@ -109,10 +105,8 @@ impl<'s> Parser<'s> {
 
     /// Class declaration parsing
     fn class_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
-
         // Parsing class name
-        self.expect(TokenKind::Class);
+        let start_span = self.bump().span.clone();
         let name = self.expect(TokenKind::Id);
         let name_span = start_span.clone() + name.span;
         self.expect(TokenKind::Lbrace);
@@ -136,10 +130,8 @@ impl<'s> Parser<'s> {
 
     /// Enum declaration parsing
     fn enum_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
-
         // Parsing enum name
-        self.expect(TokenKind::Enum);
+        let start_span = self.bump().span.clone();
         let name = self.expect(TokenKind::Id);
         let name_span = start_span.clone() + name.span;
 
@@ -181,10 +173,8 @@ impl<'s> Parser<'s> {
 
     /// Trait declaration parsing
     fn trait_stmt(&mut self) -> Stmt {
-        let start_span = self.peek().span.clone();
-
         // Parsing trait name
-        self.expect(TokenKind::Trait);
+        let start_span = self.bump().span.clone();
         let name = self.expect(TokenKind::Id).lexeme;
 
         // Parsing functions
