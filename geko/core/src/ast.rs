@@ -176,8 +176,8 @@ pub enum Expr {
     // Field access
     Field {
         span: Span,
-        name: String,
         container: Box<Expr>,
+        name: String,
     },
     // Call expression
     Call {
