@@ -54,7 +54,7 @@ impl<'s> Parser<'s> {
     }
 
     /// Parses program
-    pub fn parse(&mut self) -> Block {
+    pub fn program(&mut self) -> Block {
         // If current is `None` => return empty block
         if self.current.is_none() {
             Block {

@@ -22,7 +22,7 @@ pub fn emit(source: Arc<NamedSource<String>>, code: &str) -> Ref<Chunk> {
     // Parsing program
     let lexer = Lexer::new(source.clone(), code);
     let mut parser = Parser::new(source, lexer);
-    let program = parser.parse();
+    let program = parser.program();
 
     // Analyzing program
     let mut sema = Analyzer::default();
@@ -44,7 +44,7 @@ pub fn run(
     // Parsing program
     let lexer = Lexer::new(source.clone(), code);
     let mut parser = Parser::new(source, lexer);
-    let program = parser.parse();
+    let program = parser.program();
 
     // Analyzing program
     let mut sema = Analyzer::default();
