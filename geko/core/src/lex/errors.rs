@@ -34,15 +34,6 @@ pub enum LexError<'a> {
         #[label("use `]#` to terminate comment")]
         span: SourceSpan,
     },
-    /// Invalid float
-    #[error("invalid float number.")]
-    #[diagnostic(code(lex::invalid_float_number))]
-    InvalidFloat {
-        #[source_code]
-        src: Arc<NamedSource<String>>,
-        #[label("this float number seems to be invalid.")]
-        span: SourceSpan,
-    },
     /// Invalid escape sequence
     #[error("invalid escape sequence.")]
     #[diagnostic(code(lex::invalid_escape_sequence), help("{cause}"))]
