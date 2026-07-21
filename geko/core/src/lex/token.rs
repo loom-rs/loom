@@ -3,7 +3,7 @@ use common::span::Span;
 use std::fmt::Debug;
 
 /// Represents token kind
-#[derive(Debug, PartialEq, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq, Copy)]
 pub enum TokenKind {
     For,       // `for` keyword
     While,     // `while` keyword
