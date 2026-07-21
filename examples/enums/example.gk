@@ -1,9 +1,13 @@
 enum Dog {
-  Poodle,  # 0
-  Bulldog, # 1
+  # 0
+  Poodle,
+  # 1
+  Bulldog,
   Beagle,
   Husky
 }
 dog := Dog.Poodle
-println(dog == 0) # true
-println(dog == Dog.Beagle) # false
+println(dog == 0)
+# true
+println(dog == Dog.Beagle)
+# false

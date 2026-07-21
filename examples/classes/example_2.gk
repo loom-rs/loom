@@ -1,29 +1,26 @@
 #[ A tractor 🚜 ]#
 class Tractor {
-    # Init called when a Tractor called
-    fun init(self, start_fuel) {
-        self.fuel := start_fuel
+  # Init called when a Tractor called
+  fun init(self, start_fuel) {
+    self.fuel := start_fuel
+  }
+  # Does some work
+  fun work(self) {
+    if self.fuel >= 100 {
+      self.fuel -= 100
+      return "Tractor did some work"
+    } else {
+      return "Tractor fuel underflow"
     }
-
-    # Does some work
-    fun work(self) {
-        if self.fuel >= 10.0 {
-            self.fuel -= 10.0
-            return "Tractor did some work"
-        } else {
-            return "Tractor fuel underflow"
-        }
-    }
-
-    # Fills a fuel
-    fun fill(self, fuel) {
-        self.fuel += fuel
-    }
+  }
+  # Fills a fuel
+  fun fill(self, fuel) {
+    self.fuel += fuel
+  }
 }
-
 # Calling tractor
-tractor := Tractor(10.0)
+tractor := Tractor(100)
 putln(tractor.work())
 putln(tractor.work())
-tractor.fill(60.0)
+tractor.fill(600)
 putln(tractor.work())

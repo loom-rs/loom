@@ -1,15 +1,12 @@
 use "env"
-
 env.set_var("path", "/home/antes/path")
 putln(env.get_var("path"))
 env.unset("path")
-putln(env.get_var("path")) # null
-
+putln(env.get_var("path"))
+# null
 putln(env.var("HOME"))
-
 putln(env.cwd())
 putln(env.home())
-
 putln(env.arch)
 putln(env.os)
 putln(env.family)

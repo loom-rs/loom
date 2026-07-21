@@ -1,25 +1,22 @@
 #[ A kitten ]#
 class Kitten {
-    # Init called when a Kitten is born
-    fun init(self, food) {
-        # Kitten has age and food level
-        self.age := 0.0
-        self.food := food
-    }
-
-    # Increments cat age by 0.1
-    fun grow(self) {
-        self.age += 0.1
-    }
-
-    # Increments food level by amount
-    fun feed(self, amount) {
-        self.food += amount
-    }
+  # Init called when a Kitten is born
+  fun init(self, food) {
+    # Kitten has age and food level
+    self.age := 00
+    self.food := food
+  }
+  # Increments cat age by 0.1
+  fun grow(self) {
+    self.age += 01
+  }
+  # Increments food level by amount
+  fun feed(self, amount) {
+    self.food += amount
+  }
 }
-
 # Creating a kitten with food level = 10.0
-kitten := Kitten(10.0)
-kitten.feed(15.0)
+kitten := Kitten(100)
+kitten.feed(150)
 kitten.grow()
 putln("food: " + str_of(kitten.food) + ", age: " + str_of(kitten.age))

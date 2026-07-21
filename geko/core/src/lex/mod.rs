@@ -271,9 +271,9 @@ impl<'s> Lexer<'s> {
         // Reading first sequence of digits
         self.eat_digits(&mut buffer);
 
-        // If dot presented,
+        // If dot presented and it's not a double dot,
         // reading second sequence of digits
-        if self.current == Some('.') {
+        if self.current == Some('.') && self.next != Some('.') {
             self.advance();
             self.eat_digits(&mut buffer);
         }
