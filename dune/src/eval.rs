@@ -11,7 +11,7 @@ use crate::{
         Value::{self},
     },
 };
-use common::{bail, bug, span::Span};
+use common::{bail, span::Span};
 use std::{cell::RefCell, collections::HashMap};
 
 /// Implementation of the VM
@@ -404,7 +404,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         frame.push(result);
     }
 
-    /// Does class impls trait
+    /// Checks class impls trait
     fn is_impls(span: &Span, lhs: Value, rhs: Value) -> bool {
         // Mathing lhs and rhs
         match (lhs, rhs) {
@@ -516,20 +516,32 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         frame.jump(pc);
     }
 
+    /// Is truhty helper
+    fn is_truthy(value: Value) -> bool {
+        match value {
+            Value::Bool(b) => b,
+            Value::Null => false,
+            _ => true,
+        }
+    }
+
     /// Executes jump if true op
     fn op_jump_if_true(&mut self, label: Label) {
         let frame = self.frame_mut();
         let value = frame.pop();
 
-        let result = if let Value::Bool(a) = value {
-            a
-        } else {
-            bug!("jump if with non-bool value")
-        };
-
-        if result {
+        if Self::is_truthy(value) {
             let pc = frame.pc_of_label(label);
             frame.jump(pc);
+        }
+    }
+
+    /// Is false helper
+    fn is_falsey(value: Value) -> bool {
+        match value {
+            Value::Bool(b) => !b,
+            Value::Null => true,
+            _ => false,
         }
     }
 
@@ -538,13 +550,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let value = frame.pop();
 
-        let result = if let Value::Bool(a) = value {
-            a
-        } else {
-            bug!("jump if with non-bool value")
-        };
-
-        if !result {
+        if Self::is_falsey(value) {
             let pc = frame.pc_of_label(label);
             frame.jump(pc);
         }
