@@ -8,7 +8,7 @@ use dune::{
     refs::{MutRef, Ref},
     value::Module,
 };
-use geko_core::emit;
+use geko_core::{Flags, emit};
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use std::{collections::HashMap, sync::Arc};
 use thiserror::Error;
@@ -80,7 +80,7 @@ impl<'io> ModuleRegistry for CliModuleRegistry<'io> {
                 let source = Arc::new(NamedSource::new(id, code.clone()));
 
                 // Compiling module
-                let chunk = emit(source, &code);
+                let chunk = emit(source, &code, Flags::default());
                 (id.into(), chunk)
             }
             _ => bail!(ModsError::FailedToFindModule {

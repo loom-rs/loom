@@ -7,7 +7,7 @@ use crate::{io::CliIO, modules::CliModuleRegistry};
 use camino::Utf8PathBuf;
 use clap::Parser;
 use common::io::IO;
-use geko_core::run;
+use geko_core::{Flags, run};
 use geko_std::builtins;
 use miette::NamedSource;
 use std::sync::Arc;
@@ -18,6 +18,14 @@ use std::sync::Arc;
 struct Args {
     /// Path to the file
     path: Utf8PathBuf,
+
+    /// Dump the AST flag
+    #[arg(long)]
+    dump_ast: bool,
+
+    /// Dump bytecode flag
+    #[arg(long)]
+    dump_bytecode: bool,
 }
 
 /// Prepares miette
@@ -41,7 +49,10 @@ fn main() {
     prepare_miette();
 
     // Parsing arguments
-    let path = Args::parse().path;
+    let args = Args::parse();
+
+    // Getting file path
+    let path = args.path;
 
     // Preparing IO, Modules Registry and Builtins
     let io = CliIO;
@@ -51,10 +62,16 @@ fn main() {
     // Preparing module name
     let name = io.canonicalize(&path).unwrap().to_string();
 
-    // Interpreting
+    // Reading code
     let code = io.read(&path);
+
+    // Preparing flags
+    let flags = Flags {
+        dump_ast: args.dump_ast,
+        dump_bytecode: args.dump_bytecode,
+    };
 
     // Generating and running vm instructions
     let source = Arc::new(NamedSource::new(name, code.clone()));
-    run(source, &code, &io, &mut modules, builtins);
+    run(source, &code, &io, &mut modules, builtins, flags);
 }
