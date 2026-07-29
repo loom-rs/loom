@@ -1,6 +1,6 @@
 /// Imports
-use crate::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use crate::lex::token::TokenKind;
+use crate::parse::ast::{AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use crate::parse::{Parser, errors::ParseError};
 use common::bail;
 

@@ -7,6 +7,7 @@ use std::fmt::Debug;
 pub enum TokenKind {
     For,       // `for` keyword
     While,     // `while` keyword
+    Until,     // `until` keyword
     In,        // `in` keyword
     Use,       // `use` keyword
     Class,     // `class` keyword

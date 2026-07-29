@@ -118,6 +118,14 @@ while i < 1000 {
 ```
 While loop repeats code until condition becomes falsey.
 
+Example for the `until` loop:
+```
+until i > 10 {
+  ...
+}
+```
+Until loop repeats code until condition becomes truthy.
+
 And examples for the `for` loop:
 ```
 for i in 0..100 {

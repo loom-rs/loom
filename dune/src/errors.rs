@@ -56,8 +56,8 @@ pub enum RuntimeError {
     },
     /// Couldn't resolve fields
     #[error("`{value}` has no fields")]
-    #[diagnostic(code(rt::could_not_lookup_field))]
-    CouldNotLookupField {
+    #[diagnostic(code(rt::no_fields))]
+    NoFields {
         value: Value,
         #[source_code]
         src: Arc<NamedSource<String>>,

@@ -1,5 +1,5 @@
 /// Imports
-use crate::{ast::Expr, lex::token::TokenKind, parse::Parser};
+use crate::{lex::token::TokenKind, parse::Parser, parse::ast::Expr};
 
 /// Atoms parsing
 impl<'s> Parser<'s> {

@@ -18,8 +18,8 @@ pub struct Lexer<'s> {
     /// Current file source
     source: Arc<NamedSource<String>>,
 
-    /// Lexer source
-    src: Chars<'s>,
+    /// Chars lexer iterates on
+    chars: Chars<'s>,
 
     /// Current and next
     idx: usize,
@@ -35,7 +35,7 @@ impl<'s> Lexer<'s> {
         let (current, next) = (chars.next(), chars.next());
         Self {
             source: file,
-            src: chars,
+            chars,
             current,
             next,
             idx: 0,
@@ -45,7 +45,7 @@ impl<'s> Lexer<'s> {
     /// Takes step in a chars iterator, increments index
     fn advance(&mut self) {
         self.current = self.next.take();
-        self.next = self.src.next();
+        self.next = self.chars.next();
         self.idx += 1;
     }
 
@@ -305,6 +305,7 @@ impl<'s> Lexer<'s> {
         match value {
             "for" => TokenKind::For,
             "while" => TokenKind::While,
+            "until" => TokenKind::Until,
             "in" => TokenKind::In,
             "use" => TokenKind::Use,
             "class" => TokenKind::Class,

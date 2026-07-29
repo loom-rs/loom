@@ -1,5 +1,4 @@
 /// Modules
-pub mod ast;
 pub mod codegen;
 pub mod lex;
 pub mod parse;
@@ -53,6 +52,8 @@ pub fn run(
     // Generating vm instructions
     let mut generator = CodeGenerator::default();
     let chunk = generator.gen_program(program);
+
+    println!("{:#?}", chunk.code);
 
     // Running vm instructions
     let mut vm = VirtualMachine::new(io, modules, builtins);

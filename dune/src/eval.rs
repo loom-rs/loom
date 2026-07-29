@@ -819,7 +819,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 }),
             },
             // Otherwise, raising error
-            value => bail!(RuntimeError::CouldNotLookupField {
+            value => bail!(RuntimeError::NoFields {
                 src: span.0.clone(),
                 span: span.1.clone().into(),
                 value

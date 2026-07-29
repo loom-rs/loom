@@ -3,10 +3,9 @@ use miette::{Diagnostic, NamedSource, SourceSpan};
 use std::sync::Arc;
 use thiserror::Error;
 
-/// Semantic analysis error
+/// Defines semantic analysis error
 #[derive(Error, Diagnostic, Debug)]
 pub enum SemaError {
-    /// Break outside loop
     #[error("couldn't use `break` statement outside of loop.")]
     #[diagnostic(code(sema::break_outside_loop))]
     BreakOutsideLoop {
@@ -15,7 +14,6 @@ pub enum SemaError {
         #[label("this `break` statement is invalid.")]
         span: SourceSpan,
     },
-    /// Continue outside loop
     #[error("couldn't use `continue` statement outside of loop.")]
     #[diagnostic(code(sema::continue_outside_loop))]
     ContinueOutsideLoop {
@@ -24,7 +22,6 @@ pub enum SemaError {
         #[label("this `continue` statement is invalid.")]
         span: SourceSpan,
     },
-    /// Return outside function
     #[error("couldn't use `return` statement outside of function.")]
     #[diagnostic(code(sema::return_outside_fn))]
     ReturnOutsideFn {
@@ -33,8 +30,7 @@ pub enum SemaError {
         #[label("this `return` statement is invalid.")]
         span: SourceSpan,
     },
-    /// Invalid assign
-    #[error("invalid assign left-hand side of assign.")]
+    #[error("invalid left-hand side of assign.")]
     #[diagnostic(code(lex::invalid_assign_lhs))]
     InvalidAssignLhs {
         #[source_code]

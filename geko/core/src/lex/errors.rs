@@ -3,10 +3,9 @@ use miette::{Diagnostic, NamedSource, SourceSpan};
 use std::sync::Arc;
 use thiserror::Error;
 
-/// Lexer error
+/// Defines lexical analysis error
 #[derive(Error, Diagnostic, Debug)]
 pub enum LexError<'a> {
-    /// Unexpected char
     #[error("unexpected character `{ch}`.")]
     #[diagnostic(code(lex::unexpected_char))]
     UnexpectedChar {
@@ -16,7 +15,6 @@ pub enum LexError<'a> {
         #[label("try to remove this character.")]
         span: SourceSpan,
     },
-    /// Unclosed string quotes
     #[error("found unclosed string quotes.")]
     #[diagnostic(code(lex::unclosed_string_quotes))]
     UnclosedStringQuotes {
@@ -25,7 +23,6 @@ pub enum LexError<'a> {
         #[label("close string quotes by appending missed quote `\"`.")]
         span: SourceSpan,
     },
-    /// Unterminated comment
     #[error("found unterminated comment.")]
     #[diagnostic(code(lex::unterminated_comment))]
     UnterminatedComment {
@@ -34,7 +31,6 @@ pub enum LexError<'a> {
         #[label("use `]#` to terminate comment")]
         span: SourceSpan,
     },
-    /// Invalid escape sequence
     #[error("invalid escape sequence.")]
     #[diagnostic(code(lex::invalid_escape_sequence), help("{cause}"))]
     InvalidEscapeSequence {
@@ -44,7 +40,6 @@ pub enum LexError<'a> {
         span: SourceSpan,
         cause: &'a str,
     },
-    /// Unknown escape sequence
     #[error("unknown escape sequence.")]
     #[diagnostic(code(lex::unknown_escape_sequence))]
     UnknownEscapeSequence {

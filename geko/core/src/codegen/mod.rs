@@ -1,5 +1,5 @@
 /// Imports
-use crate::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
+use crate::parse::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
 use common::{bug, span::Span};
 use dune::{
     ops::{Chunk, Label, Opcode},
@@ -79,9 +79,12 @@ impl CodeGenerator {
             span,
             Opcode::Push(match lit {
                 Lit::Number(num) => {
-                    if num.contains(".") {
+                    // If number contains dot or scietific notation => Float
+                    if num.contains(".") || num.contains("e") || num.contains("E") {
                         Value::Float(num.parse().unwrap())
-                    } else {
+                    }
+                    // Otherwise => Int
+                    else {
                         Value::Int(num.parse().unwrap())
                     }
                 }
@@ -135,24 +138,18 @@ impl CodeGenerator {
     }
 
     /// Performs generation of variable assign
-    pub fn gen_variable_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
+    fn gen_variable_assign(&mut self, span: Span, name: String, op: AssignOp, value: Expr) {
         // Generating value
         self.gen_expr(value);
 
         // Matching operator
         match op {
+            // Define variable
             AssignOp::Define => {
-                // Duplicate value
-                self.chunk().insert(span.clone(), Opcode::Dup);
-
-                // Define variable
                 self.chunk().insert(span, Opcode::Define(name));
             }
+            // Store variable
             AssignOp::Assign => {
-                // Duplicate value
-                self.chunk().insert(span.clone(), Opcode::Dup);
-
-                // Store variable
                 self.chunk().insert(span, Opcode::Store(name));
             }
             AssignOp::Add
@@ -163,9 +160,14 @@ impl CodeGenerator {
             | AssignOp::BitAnd
             | AssignOp::BitOr
             | AssignOp::Xor => {
-                // Calculate value
+                // Load variable
                 self.chunk()
                     .insert(span.clone(), Opcode::Load(name.clone()));
+
+                // Swap values
+                self.chunk().insert(span.clone(), Opcode::Swap);
+
+                // Calculating value
                 self.chunk().insert(
                     span.clone(),
                     match op {
@@ -181,9 +183,6 @@ impl CodeGenerator {
                     },
                 );
 
-                // Duplicate value
-                self.chunk().insert(span.clone(), Opcode::Dup);
-
                 // Store variable
                 self.chunk().insert(span, Opcode::Store(name));
             }
@@ -191,7 +190,7 @@ impl CodeGenerator {
     }
 
     /// Performs generation of field assign
-    pub fn gen_field_assign(
+    fn gen_field_assign(
         &mut self,
         span: Span,
         container: Expr,
@@ -205,21 +204,15 @@ impl CodeGenerator {
                 // Generating value
                 self.gen_expr(value);
 
-                // Duplicate value
-                self.chunk().insert(span.clone(), Opcode::Dup);
-
                 // Generating container
                 self.gen_expr(container);
 
-                // Defining field
+                // Define field
                 self.chunk().insert(span, Opcode::DefineField(name));
             }
             AssignOp::Assign => {
                 // Generating value
                 self.gen_expr(value);
-
-                // Duplicate value
-                self.chunk().insert(span.clone(), Opcode::Dup);
 
                 // Generating container
                 self.gen_expr(container);
@@ -268,7 +261,7 @@ impl CodeGenerator {
     }
 
     /// Performs generation of assign
-    pub fn gen_assign(&mut self, span: Span, what: Expr, op: AssignOp, value: Expr) {
+    fn gen_assign(&mut self, span: Span, what: Expr, op: AssignOp, value: Expr) {
         // Matching lhs
         match what {
             Expr::Variable { name, .. } => self.gen_variable_assign(span.clone(), name, op, value),
@@ -394,6 +387,31 @@ impl CodeGenerator {
         self.chunk().patch_label(end_label, end_pc);
     }
 
+    /// Performs generation of until loop
+    pub fn gen_until(&mut self, span: Span, condition: Expr, block: Block) {
+        // Preparing labels
+        self.chunk().insert(span.clone(), Opcode::Nop);
+        let start_label = self.chunk().fresh_label();
+        let end_label = self.chunk().fresh_label();
+
+        // Jumping to end if condition is false
+        self.gen_expr(condition);
+        self.chunk()
+            .insert(span.clone(), Opcode::JumpIfTrue(end_label));
+
+        // Loop body
+        self.push_loop(LoopLabels {
+            start_label,
+            end_label,
+        });
+        self.gen_block(block);
+        self.chunk().insert(span.clone(), Opcode::Jump(start_label));
+
+        // Patching end label
+        let end_pc = self.chunk().insert(span.clone(), Opcode::Nop);
+        self.chunk().patch_label(end_label, end_pc);
+    }
+
     /// Performs generation of if
     pub fn gen_if(&mut self, span: Span, condition: Expr, then: Block, else_: Option<Box<Stmt>>) {
         // Preparing labels
@@ -497,6 +515,11 @@ impl CodeGenerator {
                 condition,
                 block,
             } => self.gen_while(span, condition, block),
+            Stmt::Until {
+                span,
+                condition,
+                block,
+            } => self.gen_until(span, condition, block),
             Stmt::If {
                 span,
                 condition,

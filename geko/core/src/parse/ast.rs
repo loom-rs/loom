@@ -2,7 +2,7 @@
 use common::span::Span;
 use std::fmt::Display;
 
-/// Assignment operator
+/// Defines assignment operator
 #[derive(Debug, Clone, Copy)]
 pub enum AssignOp {
     Define, // :=
@@ -17,7 +17,7 @@ pub enum AssignOp {
     Xor,    // ^=
 }
 
-/// Binary operator
+/// Defines binary operator
 #[derive(Debug, Clone, Copy)]
 pub enum BinOp {
     Add,      // +
@@ -66,7 +66,7 @@ impl Display for BinOp {
     }
 }
 
-/// Unary operator
+/// Defines unary operator
 #[derive(Debug, Clone, Copy)]
 pub enum UnOp {
     Neg,  // -
@@ -86,13 +86,9 @@ impl Display for UnOp {
 /// Defines literal
 #[derive(Debug, Clone)]
 pub enum Lit {
-    /// Number literal
     Number(String),
-    /// String literal
     String(String),
-    /// Bool literal
     Bool(String),
-    /// Null literal
     Null,
 }
 
@@ -143,65 +139,54 @@ pub struct Enum {
 /// Defines an expression
 #[derive(Debug, Clone)]
 pub enum Expr {
-    // Literal
     Lit {
         span: Span,
         lit: Lit,
     },
-    // Binary operation
     Bin {
         span: Span,
         op: BinOp,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
     },
-    // Unary operation
     Un {
         span: Span,
         op: UnOp,
         value: Box<Expr>,
     },
-    // Assignment expression
     Assign {
         span: Span,
         what: Box<Expr>,
         op: AssignOp,
         value: Box<Expr>,
     },
-    // Variable access
     Variable {
         span: Span,
         name: String,
     },
-    // Field access
     Field {
         span: Span,
         container: Box<Expr>,
         name: String,
     },
-    // Call expression
     Call {
         span: Span,
         callee: Box<Expr>,
         args: Vec<Expr>,
     },
-    /// List expression
     List {
         span: Span,
         list: Vec<Expr>,
     },
-    /// Dict expression
     Dict {
         span: Span,
         dict: Vec<(Expr, Expr)>,
     },
-    /// Anonymous function expression
     Function {
         span: Span,
         params: Vec<String>,
         block: Block,
     },
-    /// Range expression
     Range {
         span: Span,
         lhs: Box<Expr>,
@@ -213,61 +198,49 @@ pub enum Expr {
 /// Defines use of module
 #[derive(Debug, Clone)]
 pub enum UseKind {
-    // As `name`
     As(String),
-    // Pick `items`
     Pick(Vec<String>),
-    // For every item
     All,
-    // Just import
     Just,
 }
 
 /// Defines statement
 #[derive(Debug, Clone)]
 pub enum Stmt {
-    // While statement
     While {
         span: Span,
         condition: Expr,
         block: Block,
     },
-    // If statement
+    Until {
+        span: Span,
+        condition: Expr,
+        block: Block,
+    },
     If {
         span: Span,
         condition: Expr,
         then: Block,
         else_: Option<Box<Stmt>>,
     },
-    // For statement
     For {
         span: Span,
         var: String,
         iterable: Expr,
         block: Block,
     },
-    // Class declaration
     Class(Class),
-    // Enum declaration
     Enum(Enum),
-    // Trait declaration
     Trait(Trait),
-    // Function declaration
     Function(Function),
-    // Return statement
     Return {
         span: Span,
         value: Expr,
     },
-    // Continue statement
     Continue(Span),
-    // Break statement
     Break(Span),
-    // Expr
     Expr(Expr),
-    // Scope block
     Block(Box<Block>),
-    // Use statement
     Use {
         span: Span,
         path: String,

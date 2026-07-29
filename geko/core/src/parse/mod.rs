@@ -1,4 +1,5 @@
 /// Modules
+pub mod ast;
 mod atom;
 mod errors;
 mod expr;
@@ -6,11 +7,11 @@ mod stmt;
 
 /// Imports
 use crate::{
-    ast::Block,
     lex::{
         Lexer,
         token::{Token, TokenKind},
     },
+    parse::ast::Block,
     parse::errors::ParseError,
 };
 use common::{bail, span::Span};

@@ -3,7 +3,7 @@ mod errors;
 
 /// Imports
 use crate::{
-    ast::{Block, Expr, Function, Stmt},
+    parse::ast::{Block, Expr, Function, Stmt},
     sema::errors::SemaError,
 };
 use common::bail;
@@ -40,10 +40,16 @@ impl Analyzer {
 
     /// Analyzes statement
     fn analyze_stmt(&mut self, stmt: &Stmt) {
-        // Matching statement
         match stmt {
-            // Analyzing loop blocks
             Stmt::While {
+                condition, block, ..
+            } => {
+                self.stack.push(ScopeKind::Loop);
+                self.analyze_expr(condition);
+                self.analyze_block(block);
+                self.stack.pop();
+            }
+            Stmt::Until {
                 condition, block, ..
             } => {
                 self.stack.push(ScopeKind::Loop);
@@ -59,7 +65,6 @@ impl Analyzer {
                 self.analyze_block(block);
                 self.stack.pop();
             }
-            // Analyzing then and else block
             Stmt::If {
                 condition,
                 then,
@@ -77,21 +82,17 @@ impl Analyzer {
                     self.analyze_stmt(branch);
                 }
             }
-            // Analyzing class methods
             Stmt::Class(class) => {
                 for method in &class.methods {
                     self.analyze_function(method);
                 }
             }
-            // Analyzing function
             Stmt::Function(function) => {
                 self.analyze_function(function);
             }
-            // Analyzing scope block statements
             Stmt::Block(block) => {
                 self.analyze_block(block);
             }
-            // Analyzing terminator statements
             Stmt::Return { span, value } => {
                 // Analyzing return value
                 self.analyze_expr(value);
@@ -104,7 +105,6 @@ impl Analyzer {
                     })
                 }
             }
-            // Analyzing terminators
             Stmt::Continue(span) => {
                 // Checking hierarchy of scopes for loop
                 if !self.hierarchy_has_loop() {
@@ -123,7 +123,6 @@ impl Analyzer {
                     })
                 }
             }
-            // Analyzing expr statement
             Stmt::Expr(expr) => self.analyze_expr(expr),
             // Skipping use, enum, trait statements
             Stmt::Use { .. } | Stmt::Enum(_) | Stmt::Trait(_) => {}
@@ -132,15 +131,12 @@ impl Analyzer {
 
     /// Analyzes expr
     fn analyze_expr(&mut self, expr: &Expr) {
-        // Matching expression
         match expr {
-            // Analyzing binary and unary expression
             Expr::Bin { lhs, rhs, .. } => {
                 self.analyze_expr(lhs);
                 self.analyze_expr(rhs);
             }
             Expr::Un { value, .. } => self.analyze_expr(value),
-            // Analyzing assignment expression
             Expr::Assign {
                 span, what, value, ..
             } => {
@@ -156,28 +152,23 @@ impl Analyzer {
                 self.analyze_expr(what);
                 self.analyze_expr(value);
             }
-            // Analyzing field container
             Expr::Field { container, .. } => self.analyze_expr(container),
-            // Analyzing arguments and callee
             Expr::Call {
                 args, callee: what, ..
             } => {
                 self.analyze_expr(what);
                 args.iter().for_each(|arg| self.analyze_expr(arg));
             }
-            // Analyzing collection initializers
             Expr::List { list, .. } => list.iter().for_each(|arg| self.analyze_expr(arg)),
             Expr::Dict { dict, .. } => dict.iter().for_each(|(k, v)| {
                 self.analyze_expr(k);
                 self.analyze_expr(v);
             }),
-            // Analyzing anonymous function (lambda)
             Expr::Function { block, .. } => {
                 self.stack.push(ScopeKind::Function);
                 self.analyze_block(block);
                 self.stack.pop();
             }
-            // Analyzing range expression
             Expr::Range { lhs, rhs, .. } => {
                 self.analyze_expr(lhs);
                 self.analyze_expr(rhs);

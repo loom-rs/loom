@@ -4,10 +4,9 @@ use miette::{Diagnostic, NamedSource, SourceSpan};
 use std::sync::Arc;
 use thiserror::Error;
 
-/// Parse error
+/// Defines parsing error
 #[derive(Error, Diagnostic, Debug)]
 pub enum ParseError {
-    /// Unexpected token
     #[error("unexpected token `{got:?}`. expected `{expected:?}`")]
     #[diagnostic(code(parse::unexpected_tk))]
     UnexpectedToken {
@@ -20,7 +19,6 @@ pub enum ParseError {
         #[label("while parsing that...")]
         prev: SourceSpan,
     },
-    /// Unexpected expr token
     #[error("unexpected expression token `{got:?}`.")]
     #[diagnostic(
         code(parse::unexpected_expr_tk),
@@ -33,7 +31,6 @@ pub enum ParseError {
         #[label("got unexpected token here...")]
         span: SourceSpan,
     },
-    /// Unexpected end of file
     #[error("unexpected end of file.")]
     #[diagnostic(code(parse::unexpected_eof))]
     UnexpectedEof {

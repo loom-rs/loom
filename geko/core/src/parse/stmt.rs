@@ -1,8 +1,8 @@
 /// Imports
 use crate::{
-    ast::{Block, Class, Enum, Function, Stmt, Trait, TraitFunction, UseKind},
     lex::token::TokenKind,
     parse::Parser,
+    parse::ast::{Block, Class, Enum, Function, Stmt, Trait, TraitFunction, UseKind},
 };
 
 /// Stmts parsing
@@ -53,7 +53,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    /// While Stmt parsing
+    /// While statement parsing
     fn while_stmt(&mut self) -> Stmt {
         let start_span = self.bump().span.clone();
 
@@ -63,6 +63,22 @@ impl<'s> Parser<'s> {
         let end_span = self.prev().span.clone();
 
         Stmt::While {
+            span: start_span + end_span,
+            condition,
+            block,
+        }
+    }
+
+    /// Until statement parsing
+    fn until_stmt(&mut self) -> Stmt {
+        let start_span = self.bump().span.clone();
+
+        let condition = self.expr();
+        let block = self.block();
+
+        let end_span = self.prev().span.clone();
+
+        Stmt::Until {
             span: start_span + end_span,
             condition,
             block,
@@ -261,6 +277,7 @@ impl<'s> Parser<'s> {
         match self.peek().kind {
             TokenKind::For => self.for_stmt(),
             TokenKind::While => self.while_stmt(),
+            TokenKind::Until => self.until_stmt(),
             TokenKind::If => self.if_stmt(),
             TokenKind::Class => self.class_stmt(),
             TokenKind::Enum => self.enum_stmt(),
