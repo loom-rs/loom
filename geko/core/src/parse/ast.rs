@@ -240,7 +240,7 @@ pub enum Stmt {
     Continue(Span),
     Break(Span),
     Expr(Expr),
-    Block(Box<Block>),
+    Block(Block),
     Use {
         span: Span,
         path: String,

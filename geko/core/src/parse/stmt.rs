@@ -91,7 +91,7 @@ impl<'s> Parser<'s> {
         if self.check(TokenKind::If) {
             self.if_stmt()
         } else {
-            Stmt::Block(Box::new(self.block()))
+            Stmt::Block(self.block())
         }
     }
 
