@@ -1,12 +1,13 @@
 /// Modules
 pub mod codegen;
 pub mod lex;
+pub mod opt;
 pub mod parse;
 pub mod sema;
 
 /// Imports
-use crate::{codegen::CodeGenerator, lex::Lexer, parse::Parser, sema::Analyzer};
-use common::io::IO;
+use crate::{codegen::CodeGenerator, lex::Lexer, opt::optimize, parse::Parser, sema::Analyzer};
+use common::{io::IO, warn};
 use dune::{
     ModuleRegistry, VirtualMachine,
     frame::Scope,
@@ -24,6 +25,12 @@ pub struct Flags {
 
     /// Dump bytecode
     pub dump_bytecode: bool,
+
+    /// Measure execution time?
+    pub measure_exec_time: bool,
+
+    /// Drop optimizations?
+    pub drop_optimizations: bool,
 }
 
 /// Compiles module and returns reference to chunk
@@ -46,9 +53,21 @@ pub fn emit(source: Arc<NamedSource<String>>, code: &str, flags: Flags) -> Ref<C
     let mut generator = CodeGenerator::default();
     let chunk = generator.gen_program(program);
 
+    // Optimizing vm instructions
+    let chunk = if !flags.drop_optimizations {
+        Ref::new(optimize(chunk))
+    } else {
+        Ref::new(chunk)
+    };
+
     // Dumping bytecode if needed
     if flags.dump_bytecode {
         println!("{chunk:#?}");
+    }
+
+    // If measure exec time is true throw a warning
+    if flags.measure_exec_time {
+        warn!("could not measure executiong time in `emit()`")
     }
 
     chunk
@@ -81,13 +100,29 @@ pub fn run(
     let mut generator = CodeGenerator::default();
     let chunk = generator.gen_program(program);
 
+    // Optimizing vm instructions
+    let chunk = if !flags.drop_optimizations {
+        Ref::new(optimize(chunk))
+    } else {
+        Ref::new(chunk)
+    };
+
     // Dumping bytecode if needed
     if flags.dump_bytecode {
         println!("{chunk:#?}");
     }
 
-    // Running vm instructions
+    // Preparing VM
     let mut vm = VirtualMachine::new(io, modules, builtins);
     vm.push(chunk);
-    vm.exec();
+
+    // Executing instructions
+    if flags.measure_exec_time {
+        let start = std::time::Instant::now();
+        vm.exec();
+        let duration = start.elapsed();
+        println!("execution time: {duration:?}")
+    } else {
+        vm.exec();
+    }
 }

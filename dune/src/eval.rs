@@ -11,7 +11,7 @@ use crate::{
         Value::{self},
     },
 };
-use common::{bail, span::Span};
+use common::{bail, bug, span::Span};
 use std::{cell::RefCell, collections::HashMap};
 
 /// Implementation of the VM
@@ -161,6 +161,50 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             (Value::Float(a), Value::Float(b)) => Value::Float(a % b),
             (a, b) => bail!(RuntimeError::InvalidBinOp {
                 op: "%".into(),
+                a,
+                b,
+                src: span.0,
+                span: span.1.into(),
+            }),
+        };
+
+        frame.push(result);
+    }
+
+    /// Executes shl op
+    fn op_shl(&mut self) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        let result = match (lhs, rhs) {
+            (Value::Int(a), Value::Int(b)) => Value::Int(a << b),
+            (a, b) => bail!(RuntimeError::InvalidBinOp {
+                op: "<<".into(),
+                a,
+                b,
+                src: span.0,
+                span: span.1.into(),
+            }),
+        };
+
+        frame.push(result);
+    }
+
+    /// Executes shr op
+    fn op_shr(&mut self) {
+        let frame = self.frame_mut();
+        let span = frame.span();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        let result = match (lhs, rhs) {
+            (Value::Int(a), Value::Int(b)) => Value::Int(a >> b),
+            (a, b) => bail!(RuntimeError::InvalidBinOp {
+                op: ">>".into(),
                 a,
                 b,
                 src: span.0,
@@ -489,8 +533,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         frame.push(result);
     }
 
-    /// Executes bang op
-    fn op_bang(&mut self) {
+    /// Executes not op
+    fn op_not(&mut self) {
         let frame = self.frame_mut();
         let span = frame.span();
         let value = frame.pop();
@@ -987,6 +1031,108 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.frame_mut().push(Value::Module(module));
     }
 
+    /// Executes jump if gt op
+    fn op_jump_if_gt(&mut self, label: Label) {
+        let frame = self.frame_mut();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        if match (lhs, rhs) {
+            (Value::Int(a), Value::Int(b)) => a > b,
+            (Value::Int(a), Value::Float(b)) => a as f64 > b,
+            (Value::Float(a), Value::Int(b)) => a > b as f64,
+            (Value::Float(a), Value::Float(b)) => a > b,
+            (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if gt` super instruction"),
+        } {
+            let pc = frame.pc_of_label(label);
+            frame.jump(pc);
+        }
+    }
+
+    /// Executes jump if ge op
+    fn op_jump_if_ge(&mut self, label: Label) {
+        let frame = self.frame_mut();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        if match (lhs, rhs) {
+            (Value::Int(a), Value::Int(b)) => a >= b,
+            (Value::Int(a), Value::Float(b)) => a as f64 >= b,
+            (Value::Float(a), Value::Int(b)) => a >= b as f64,
+            (Value::Float(a), Value::Float(b)) => a >= b,
+            (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if ge` super instruction"),
+        } {
+            let pc = frame.pc_of_label(label);
+            frame.jump(pc);
+        }
+    }
+
+    /// Executes jump if lt op
+    fn op_jump_if_lt(&mut self, label: Label) {
+        let frame = self.frame_mut();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        if match (lhs, rhs) {
+            (Value::Int(a), Value::Int(b)) => a < b,
+            (Value::Int(a), Value::Float(b)) => (a as f64) < b,
+            (Value::Float(a), Value::Int(b)) => a < b as f64,
+            (Value::Float(a), Value::Float(b)) => a < b,
+            (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if lt` super instruction"),
+        } {
+            let pc = frame.pc_of_label(label);
+            frame.jump(pc);
+        }
+    }
+
+    /// Executes jump if ge op
+    fn op_jump_if_le(&mut self, label: Label) {
+        let frame = self.frame_mut();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        if match (lhs, rhs) {
+            (Value::Int(a), Value::Int(b)) => a <= b,
+            (Value::Int(a), Value::Float(b)) => a as f64 <= b,
+            (Value::Float(a), Value::Int(b)) => a <= b as f64,
+            (Value::Float(a), Value::Float(b)) => a <= b,
+            (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if le` super instruction"),
+        } {
+            let pc = frame.pc_of_label(label);
+            frame.jump(pc);
+        }
+    }
+
+    /// Executes jump if eq op
+    fn op_jump_if_eq(&mut self, label: Label) {
+        let frame = self.frame_mut();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        if lhs == rhs {
+            let pc = frame.pc_of_label(label);
+            frame.jump(pc);
+        }
+    }
+
+    /// Executes jump if ne op
+    fn op_jump_if_ne(&mut self, label: Label) {
+        let frame = self.frame_mut();
+
+        let rhs = frame.pop();
+        let lhs = frame.pop();
+
+        if lhs != rhs {
+            let pc = frame.pc_of_label(label);
+            frame.jump(pc);
+        }
+    }
+
     /// Runs vm execution loop
     pub fn exec(&mut self) {
         while let Some(op) = self.frame().op() {
@@ -1007,6 +1153,9 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::Mul => self.op_mul(),
                 Opcode::Div => self.op_div(),
                 Opcode::Rem => self.op_rem(),
+                // Shift operationss
+                Opcode::Shl => self.op_shl(),
+                Opcode::Shr => self.op_shr(),
                 // Compare operations
                 Opcode::Gt => self.op_gt(),
                 Opcode::Ge => self.op_ge(),
@@ -1026,7 +1175,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::NotImpls => self.op_not_impls(),
                 // Unary operations
                 Opcode::Neg => self.op_neg(),
-                Opcode::Bang => self.op_bang(),
+                Opcode::Not => self.op_not(),
                 // Jump operations
                 Opcode::Jump(label) => self.op_jump(label),
                 Opcode::JumpIfTrue(label) => self.op_jump_if_true(label),
@@ -1051,6 +1200,13 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::MakeTrait(name, functions) => self.op_make_trait(name, functions),
                 // Import operation
                 Opcode::Import(path) => self.op_import(path),
+                // Super operations
+                Opcode::JumpIfGt(label) => self.op_jump_if_gt(label),
+                Opcode::JumpIfGe(label) => self.op_jump_if_ge(label),
+                Opcode::JumpIfLt(label) => self.op_jump_if_lt(label),
+                Opcode::JumpIfLe(label) => self.op_jump_if_le(label),
+                Opcode::JumpIfEq(label) => self.op_jump_if_eq(label),
+                Opcode::JumpIfNe(label) => self.op_jump_if_ne(label),
             }
 
             // Switching to next instruction

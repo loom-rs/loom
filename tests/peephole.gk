@@ -1,0 +1,10 @@
+a := 1 * 1
+b := a * 0
+c := a - 0
+d := a + 0
+e := a / 1
+if !true {
+    putln("First branch")
+} else {
+    putln("Second branch")
+}

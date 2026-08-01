@@ -14,3 +14,11 @@ macro_rules! bug {
         panic!("{:?}", miette::miette!($text));
     }};
 }
+
+/// Prints a warn
+#[macro_export]
+macro_rules! warn {
+    ($text:expr) => {{
+        println!("{:?}", miette::miette!($text));
+    }};
+}

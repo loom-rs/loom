@@ -60,10 +60,10 @@ impl CodeGenerator {
     }
 
     /// Performs generation of program
-    pub fn gen_program(&mut self, program: Block) -> Ref<Chunk> {
+    pub fn gen_program(&mut self, program: Block) -> Chunk {
         self.push_chunk();
         self.gen_block(program);
-        Ref::new(self.pop_chunk())
+        self.pop_chunk()
     }
 
     /// Performs generation of block
@@ -132,7 +132,7 @@ impl CodeGenerator {
             span,
             match op {
                 UnOp::Neg => Opcode::Neg,
-                UnOp::Bang => Opcode::Bang,
+                UnOp::Bang => Opcode::Not,
             },
         );
     }

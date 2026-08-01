@@ -26,6 +26,14 @@ struct Args {
     /// Dump bytecode flag
     #[arg(long)]
     dump_bytecode: bool,
+
+    /// Measure execution time flag
+    #[arg(long)]
+    measure_exec_time: bool,
+
+    /// Drop optimizations flag
+    #[arg(long)]
+    drop_optimizations: bool,
 }
 
 /// Prepares miette
@@ -69,6 +77,8 @@ fn main() {
     let flags = Flags {
         dump_ast: args.dump_ast,
         dump_bytecode: args.dump_bytecode,
+        measure_exec_time: args.measure_exec_time,
+        drop_optimizations: args.drop_optimizations,
     };
 
     // Generating and running vm instructions

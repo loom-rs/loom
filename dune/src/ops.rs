@@ -9,6 +9,7 @@ use std::collections::HashMap;
 /// Defines virtual machine operation code
 #[derive(Debug, Clone)]
 pub enum Opcode {
+    /* Simple instructions */
     Nop,
     Push(Value),
     Pop,
@@ -19,6 +20,8 @@ pub enum Opcode {
     Mul,
     Div,
     Rem,
+    Shl,
+    Shr,
     Gt,
     Ge,
     Lt,
@@ -33,7 +36,7 @@ pub enum Opcode {
     Impls,
     NotImpls,
     Neg,
-    Bang,
+    Not,
     Jump(Label),
     JumpIfTrue(Label),
     JumpIfFalse(Label),
@@ -50,6 +53,14 @@ pub enum Opcode {
     MakeClass(String, HashMap<String, Ref<Function>>),
     MakeTrait(String, Vec<TraitFunction>),
     Import(String),
+
+    /* Super instructions */
+    JumpIfGt(Label),
+    JumpIfGe(Label),
+    JumpIfLt(Label),
+    JumpIfLe(Label),
+    JumpIfEq(Label),
+    JumpIfNe(Label),
 }
 
 /// Defines chunk label
