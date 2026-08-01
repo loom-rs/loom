@@ -1,6 +1,6 @@
 /// Imports
 use crate::{
-    ops::{Chunk, Handler, Label, Opcode},
+    ops::{Chunk, Label, Opcode},
     refs::{MutRef, Ref},
     value::Value,
 };
@@ -143,15 +143,5 @@ impl Frame {
             .get(self.pc)
             .cloned()
             .unwrap_or_else(|| bug!("pc > source map len"))
-    }
-
-    /// Returns handler by current pc
-    pub fn handler(&self) -> Option<Handler> {
-        self.chunk
-            .handlers
-            .iter()
-            .rev()
-            .find(|h| (h.start..h.end).contains(&self.pc))
-            .cloned()
     }
 }

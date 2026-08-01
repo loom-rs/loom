@@ -56,19 +56,6 @@ pub enum Opcode {
 #[derive(Debug, Clone, Default, Copy)]
 pub struct Label(usize);
 
-/// Defines range exception handler
-#[derive(Debug, Clone, Default, Copy)]
-pub struct Handler {
-    /// Start pc
-    pub start: usize,
-
-    /// End pc
-    pub end: usize,
-
-    /// Target label
-    pub target: Label,
-}
-
 /// Defines chunk of opcodes
 #[derive(Debug, Clone, Default)]
 pub struct Chunk {
@@ -82,9 +69,6 @@ pub struct Chunk {
     /// Chunk labels map:
     /// Id -> Pc
     pub labels: Vec<usize>,
-
-    /// Exception handlers
-    pub handlers: Vec<Handler>,
 }
 
 /// Chunk implementation
