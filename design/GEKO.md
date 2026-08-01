@@ -19,8 +19,8 @@ for math and games, designed to be simple, readable and easy-to-learn.
 Best way to get a quick feel for a language's style is to see what words it uses. 
 Here’s what Geko has:
 ```
-for while in use class enum if else
-return continue brrak as fun trait pick
+for while until in use class enum if else
+return continue break as fun trait pick
 ```
 
 ### Comments
