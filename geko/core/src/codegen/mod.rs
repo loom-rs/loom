@@ -1,5 +1,11 @@
+/// Modules
+pub mod opt;
+
 /// Imports
-use crate::parse::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp};
+use crate::{
+    codegen::opt::optimize,
+    parse::ast::{self, AssignOp, BinOp, Block, Expr, Lit, Stmt, UnOp},
+};
 use common::{bug, span::Span};
 use dune::{
     ops::{Chunk, Label, Opcode},
@@ -24,20 +30,41 @@ pub struct CodeGenerator {
 
     /// Loops labels stack
     loops: Vec<LoopLabels>,
+
+    /// Perform optimizations?
+    optimize: bool,
 }
 
 /// Implementation
 impl CodeGenerator {
+    /// Creates new code generator
+    pub fn new(optimize: bool) -> Self {
+        Self {
+            chunks: Vec::new(),
+            loops: Vec::new(),
+            optimize,
+        }
+    }
+
     /// Pushes new chunk onto the stack
     pub fn push_chunk(&mut self) {
         self.chunks.push(Chunk::default());
     }
 
-    /// Pops chunk from the stack
+    /// Pops chunk from the stack and optimizes it if optimizations are enabled
     pub fn pop_chunk(&mut self) -> Chunk {
-        self.chunks
+        // Popping chunk
+        let chunk = self
+            .chunks
             .pop()
-            .unwrap_or_else(|| bug!("pop with empty chunk stack"))
+            .unwrap_or_else(|| bug!("pop with empty chunk stack"));
+
+        // Optimizing chunk
+        if self.optimize {
+            optimize(chunk)
+        } else {
+            chunk
+        }
     }
 
     /// Returns ref to last chunk in stack
@@ -60,10 +87,10 @@ impl CodeGenerator {
     }
 
     /// Performs generation of program
-    pub fn gen_program(&mut self, program: Block) -> Chunk {
+    pub fn gen_program(&mut self, program: Block) -> Ref<Chunk> {
         self.push_chunk();
         self.gen_block(program);
-        self.pop_chunk()
+        Ref::new(self.pop_chunk())
     }
 
     /// Performs generation of block

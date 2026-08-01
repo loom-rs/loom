@@ -1,12 +1,11 @@
 /// Modules
 pub mod codegen;
 pub mod lex;
-pub mod opt;
 pub mod parse;
 pub mod sema;
 
 /// Imports
-use crate::{codegen::CodeGenerator, lex::Lexer, opt::optimize, parse::Parser, sema::Analyzer};
+use crate::{codegen::CodeGenerator, lex::Lexer, parse::Parser, sema::Analyzer};
 use common::{io::IO, warn};
 use dune::{
     ModuleRegistry, VirtualMachine,
@@ -50,15 +49,8 @@ pub fn emit(source: Arc<NamedSource<String>>, code: &str, flags: Flags) -> Ref<C
     sema.analyze_module(&program);
 
     // Generating vm instructions
-    let mut generator = CodeGenerator::default();
+    let mut generator = CodeGenerator::new(!flags.drop_optimizations);
     let chunk = generator.gen_program(program);
-
-    // Optimizing vm instructions
-    let chunk = if !flags.drop_optimizations {
-        Ref::new(optimize(chunk))
-    } else {
-        Ref::new(chunk)
-    };
 
     // Dumping bytecode if needed
     if flags.dump_bytecode {
@@ -97,15 +89,8 @@ pub fn run(
     sema.analyze_module(&program);
 
     // Generating vm instructions
-    let mut generator = CodeGenerator::default();
+    let mut generator = CodeGenerator::new(!flags.drop_optimizations);
     let chunk = generator.gen_program(program);
-
-    // Optimizing vm instructions
-    let chunk = if !flags.drop_optimizations {
-        Ref::new(optimize(chunk))
-    } else {
-        Ref::new(chunk)
-    };
 
     // Dumping bytecode if needed
     if flags.dump_bytecode {

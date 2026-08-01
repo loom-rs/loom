@@ -10,12 +10,27 @@ pub fn try_peephole(a: Opcode, b: Opcode) -> (Opcode, Opcode) {
         (Opcode::Store(name), Opcode::Load(name2)) if name == name2 => {
             (Opcode::Dup, Opcode::Store(name))
         }
+        (Opcode::Load(name), Opcode::Store(name2)) if name == name2 => (Opcode::Nop, Opcode::Nop),
         (Opcode::Push(Value::Int(0)), Opcode::Add) => (Opcode::Nop, Opcode::Nop),
         (Opcode::Push(Value::Int(0)), Opcode::Sub) => (Opcode::Nop, Opcode::Nop),
         (Opcode::Push(Value::Int(0)), Opcode::Mul) => (Opcode::Push(Value::Int(0)), Opcode::Nop),
         (Opcode::Push(Value::Int(1)), Opcode::Mul) => (Opcode::Nop, Opcode::Nop),
         (Opcode::Push(Value::Int(1)), Opcode::Div) => (Opcode::Nop, Opcode::Nop),
         (Opcode::Not, Opcode::JumpIfFalse(label)) => (Opcode::JumpIfTrue(label), Opcode::Nop),
+        (Opcode::Neg, Opcode::Neg) | (Opcode::Not, Opcode::Not) => (Opcode::Nop, Opcode::Nop),
+        (Opcode::Push(Value::Int(-1)), Opcode::Mul) => (Opcode::Neg, Opcode::Nop),
+        (Opcode::Push(Value::Int(2)), Opcode::Mul) => (Opcode::Push(Value::Int(1)), Opcode::Shl),
+        (Opcode::Push(Value::Int(2)), Opcode::Div) => (Opcode::Push(Value::Int(1)), Opcode::Shr),
+        (Opcode::Push(Value::Bool(true)), Opcode::And) => (Opcode::Nop, Opcode::Nop),
+        (Opcode::Push(Value::Bool(false)), Opcode::And) => {
+            (Opcode::Push(Value::Bool(false)), Opcode::Nop)
+        }
+        (Opcode::Push(Value::Bool(true)), Opcode::Or) => {
+            (Opcode::Push(Value::Bool(true)), Opcode::Nop)
+        }
+        (Opcode::Push(Value::Bool(false)), Opcode::Or) => (Opcode::Nop, Opcode::Nop),
+        (Opcode::Dup, Opcode::Pop) => (Opcode::Nop, Opcode::Nop),
+        (Opcode::Swap, Opcode::Swap) => (Opcode::Nop, Opcode::Nop),
         /* (Opcode::Call(n), Opcode::Return) => (Opcode::TailCall(n), Opcode::Nop), */
         (a, b) => (a, b),
     }
