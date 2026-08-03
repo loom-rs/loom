@@ -62,17 +62,6 @@ fn main() {
     // Getting file path
     let path = args.path;
 
-    // Preparing IO, Modules Registry and Builtins
-    let io = CliIO;
-    let mut modules = CliModuleRegistry::new(&io);
-    let builtins = builtins::provide();
-
-    // Preparing module name
-    let name = io.canonicalize(&path).unwrap().to_string();
-
-    // Reading code
-    let code = io.read(&path);
-
     // Preparing flags
     let flags = Flags {
         dump_ast: args.dump_ast,
@@ -80,6 +69,17 @@ fn main() {
         measure_exec_time: args.measure_exec_time,
         drop_optimizations: args.drop_optimizations,
     };
+
+    // Preparing IO, Modules Registry and Builtins
+    let io = CliIO;
+    let mut modules = CliModuleRegistry::new(&io, flags);
+    let builtins = builtins::provide();
+
+    // Preparing module name
+    let name = io.canonicalize(&path).unwrap().to_string();
+
+    // Reading code
+    let code = io.read(&path);
 
     // Generating and running vm instructions
     let source = Arc::new(NamedSource::new(name, code.clone()));

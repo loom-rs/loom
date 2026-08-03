@@ -63,7 +63,7 @@ pub struct Frame {
     pub chunk: Ref<Chunk>,
 
     /// Program counter
-    pc: usize,
+    pub pc: usize,
 
     /// Scope chain
     pub scope: MutRef<Scope>,
@@ -114,16 +114,6 @@ impl Frame {
         self.stack
             .pop()
             .unwrap_or_else(|| bug!("pop with empty stack"))
-    }
-
-    /// Jumps to target pc
-    pub fn jump(&mut self, pc: usize) {
-        self.pc = pc
-    }
-
-    /// Increments pc
-    pub fn step(&mut self) {
-        self.pc += 1
     }
 
     /// Returns pc of label

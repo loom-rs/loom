@@ -61,6 +61,8 @@ pub enum Opcode {
     JumpIfLe(Label),
     JumpIfEq(Label),
     JumpIfNe(Label),
+    Load2(String, String),
+    Push2(Value, Value),
 }
 
 /// Defines chunk label

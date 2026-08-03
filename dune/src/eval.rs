@@ -557,7 +557,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let frame = self.frame_mut();
         let pc = frame.pc_of_label(label);
 
-        frame.jump(pc);
+        frame.pc = pc;
     }
 
     /// Is truhty helper
@@ -576,7 +576,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         if Self::is_truthy(value) {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -596,7 +596,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         if Self::is_falsey(value) {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -793,9 +793,10 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         self.frame_mut().push(value);
     }
 
-    /// Executes load op
-    fn op_load(&mut self, name: String) {
-        let value = if let Some(value) = self.frame_mut().scope.borrow().lookup(&name) {
+    /// Lookups a variable in a following chain:
+    /// Current Scope -> Builtins
+    pub fn lookup_variable(&mut self, name: String) -> Value {
+        if let Some(value) = self.frame_mut().scope.borrow().lookup(&name) {
             value
         } else if let Some(value) = self.builtins.borrow().lookup(&name) {
             value
@@ -806,8 +807,12 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 src: span.0,
                 span: span.1.into()
             })
-        };
+        }
+    }
 
+    /// Executes load op
+    fn op_load(&mut self, name: String) {
+        let value = self.lookup_variable(name);
         self.frame_mut().push(value);
     }
 
@@ -837,8 +842,8 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         scope.insert(&name, value);
     }
 
-    /// Performs field access
-    pub(crate) fn access_field(span: &Span, container: Value, name: &str) -> Value {
+    /// Performs field lookup
+    pub(crate) fn lookup_field(span: &Span, container: Value, name: &str) -> Value {
         // Matching container
         match container {
             // Module field access
@@ -941,7 +946,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
         let span = frame.span();
         let container = frame.pop();
 
-        frame.push(Self::access_field(&span, container, &field))
+        frame.push(Self::lookup_field(&span, container, &field))
     }
 
     /// Executes store field op
@@ -1046,7 +1051,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if gt` super instruction"),
         } {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -1065,7 +1070,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if ge` super instruction"),
         } {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -1084,7 +1089,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if lt` super instruction"),
         } {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -1103,7 +1108,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
             (a, b) => bug!("invalid args `{a}` and `{b}` for `jump if le` super instruction"),
         } {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -1116,7 +1121,7 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         if lhs == rhs {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
     }
 
@@ -1129,8 +1134,23 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
 
         if lhs != rhs {
             let pc = frame.pc_of_label(label);
-            frame.jump(pc);
+            frame.pc = pc;
         }
+    }
+
+    /// Executes load2 op
+    fn op_load2(&mut self, a: String, b: String) {
+        let a = self.lookup_variable(a);
+        let b = self.lookup_variable(b);
+
+        self.frame_mut().push(a);
+        self.frame_mut().push(b);
+    }
+
+    /// Executes push2 op
+    fn op_push2(&mut self, a: Value, b: Value) {
+        self.frame_mut().push(a);
+        self.frame_mut().push(b);
     }
 
     /// Runs vm execution loop
@@ -1207,10 +1227,12 @@ impl<'io, 'reg> VirtualMachine<'io, 'reg> {
                 Opcode::JumpIfLe(label) => self.op_jump_if_le(label),
                 Opcode::JumpIfEq(label) => self.op_jump_if_eq(label),
                 Opcode::JumpIfNe(label) => self.op_jump_if_ne(label),
+                Opcode::Load2(a, b) => self.op_load2(a, b),
+                Opcode::Push2(a, b) => self.op_push2(a, b),
             }
 
             // Switching to next instruction
-            self.frame_mut().step();
+            self.frame_mut().pc += 1;
         }
     }
 }

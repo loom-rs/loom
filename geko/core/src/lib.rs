@@ -17,7 +17,7 @@ use miette::NamedSource;
 use std::sync::Arc;
 
 /// Geko flags used during emit or run
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct Flags {
     /// Dump the AST
     pub dump_ast: bool,

@@ -16,6 +16,8 @@ pub fn try_merege(a: Opcode, b: Opcode) -> (Opcode, Opcode) {
         (Opcode::Ge, Opcode::JumpIfFalse(label)) => (Opcode::JumpIfLt(label), Opcode::Nop),
         (Opcode::Lt, Opcode::JumpIfFalse(label)) => (Opcode::JumpIfGe(label), Opcode::Nop),
         (Opcode::Le, Opcode::JumpIfFalse(label)) => (Opcode::JumpIfGt(label), Opcode::Nop),
+        (Opcode::Load(a), Opcode::Load(b)) => (Opcode::Load2(a, b), Opcode::Nop),
+        (Opcode::Push(a), Opcode::Push(b)) => (Opcode::Push2(a, b), Opcode::Nop),
         (a, b) => (a, b),
     }
 }

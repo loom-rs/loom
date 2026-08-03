@@ -33,6 +33,9 @@ pub struct CliModuleRegistry<'io> {
     /// IO for fs manipulation
     io: &'io CliIO,
 
+    /// Flags for module emit
+    flags: Flags,
+
     /// Loaded modules mapping:
     /// Id -> Module
     modules: HashMap<String, MutRef<Module>>,
@@ -41,9 +44,10 @@ pub struct CliModuleRegistry<'io> {
 /// Cli module registry implementation
 impl<'io> CliModuleRegistry<'io> {
     /// Creates new module registry
-    pub fn new(io: &'io CliIO) -> Self {
+    pub fn new(io: &'io CliIO, flags: Flags) -> Self {
         Self {
             io,
+            flags,
             modules: HashMap::new(),
         }
     }
@@ -80,7 +84,7 @@ impl<'io> ModuleRegistry for CliModuleRegistry<'io> {
                 let source = Arc::new(NamedSource::new(id, code.clone()));
 
                 // Compiling module
-                let chunk = emit(source, &code, Flags::default());
+                let chunk = emit(source, &code, self.flags);
                 (id.into(), chunk)
             }
             _ => bail!(ModsError::FailedToFindModule {

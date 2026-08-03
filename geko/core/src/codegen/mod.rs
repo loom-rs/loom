@@ -14,6 +14,7 @@ use dune::{
 };
 
 /// Defines loop labels information
+#[derive(Clone, Copy)]
 pub struct LoopLabels {
     /// Start label
     start_label: Label,
@@ -74,16 +75,24 @@ impl CodeGenerator {
             .unwrap_or_else(|| bug!("empty chunk stack"))
     }
 
-    /// Pushes new loop info onto the stack
+    /// Pushes new loop labels onto the stack
     pub fn push_loop(&mut self, labels: LoopLabels) {
         self.loops.push(labels);
     }
 
-    /// Pops loops labels from the stack
+    /// Pops loop labels from the stack
     pub fn pop_loop(&mut self) -> LoopLabels {
         self.loops
             .pop()
             .unwrap_or_else(|| bug!("pop with empty loops stack"))
+    }
+
+    /// Return top loop labels from the stack
+    pub fn top_loop(&mut self) -> LoopLabels {
+        *self
+            .loops
+            .last()
+            .unwrap_or_else(|| bug!("top with empty loops stack"))
     }
 
     /// Performs generation of program
@@ -534,6 +543,18 @@ impl CodeGenerator {
         self.chunk().insert(span, Opcode::Return);
     }
 
+    /// Performs generation of continue
+    pub fn gen_continue(&mut self, span: Span) {
+        let label = self.top_loop().start_label;
+        self.chunk().insert(span, Opcode::Jump(label));
+    }
+
+    /// Performs generation of break
+    pub fn gen_break(&mut self, span: Span) {
+        let label = self.top_loop().end_label;
+        self.chunk().insert(span, Opcode::Jump(label));
+    }
+
     /// Performs generation of a statement
     pub fn gen_stmt(&mut self, stmt: Stmt) {
         match stmt {
@@ -564,8 +585,8 @@ impl CodeGenerator {
             Stmt::Trait(_) => todo!(),
             Stmt::Function(function) => self.gen_function(function),
             Stmt::Return { span, value } => self.gen_return(span, value),
-            Stmt::Continue(span) => todo!(),
-            Stmt::Break(span) => todo!(),
+            Stmt::Continue(span) => self.gen_continue(span),
+            Stmt::Break(span) => self.gen_break(span),
             Stmt::Expr(expr) => self.gen_expr(expr),
             Stmt::Block(block) => self.gen_block(block),
             Stmt::Use { span, path, kind } => todo!(),
