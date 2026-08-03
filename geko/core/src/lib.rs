@@ -1,4 +1,5 @@
 /// Modules
+pub mod bytecode_viewer;
 pub mod codegen;
 pub mod lex;
 pub mod parse;
@@ -54,7 +55,7 @@ pub fn emit(source: Arc<NamedSource<String>>, code: &str, flags: Flags) -> Ref<C
 
     // Dumping bytecode if needed
     if flags.dump_bytecode {
-        println!("{chunk:#?}");
+        bytecode_viewer::dump(&chunk, None);
     }
 
     // If measure exec time is true throw a warning
@@ -94,7 +95,7 @@ pub fn run(
 
     // Dumping bytecode if needed
     if flags.dump_bytecode {
-        println!("{chunk:#?}");
+        bytecode_viewer::dump(&chunk, None);
     }
 
     // Preparing VM
