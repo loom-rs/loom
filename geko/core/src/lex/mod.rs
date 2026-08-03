@@ -275,6 +275,7 @@ impl<'s> Lexer<'s> {
         // reading second sequence of digits
         if self.current == Some('.') && self.next != Some('.') {
             self.advance();
+            buffer.push('.');
             self.eat_digits(&mut buffer);
         }
 
