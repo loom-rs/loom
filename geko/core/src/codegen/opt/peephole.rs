@@ -18,9 +18,25 @@ pub fn try_peephole(a: Opcode, b: Opcode) -> (Opcode, Opcode) {
         (Opcode::Push(Value::Int(1)), Opcode::Div) => (Opcode::Nop, Opcode::Nop),
         (Opcode::Not, Opcode::JumpIfFalse(label)) => (Opcode::JumpIfTrue(label), Opcode::Nop),
         (Opcode::Neg, Opcode::Neg) | (Opcode::Not, Opcode::Not) => (Opcode::Nop, Opcode::Nop),
+        
+        // Multiplying and dividing by `-1` is negation.
         (Opcode::Push(Value::Int(-1)), Opcode::Mul) => (Opcode::Neg, Opcode::Nop),
-        (Opcode::Push(Value::Int(2)), Opcode::Mul) => (Opcode::Push(Value::Int(1)), Opcode::Shl),
-        (Opcode::Push(Value::Int(2)), Opcode::Div) => (Opcode::Push(Value::Int(1)), Opcode::Shr),
+        (Opcode::Push(Value::Int(-1)), Opcode::Div) => (Opcode::Neg, Opcode::Nop),
+
+        // Multiplying a number `x` by number `2^n` can be replaced by `x << n`.
+        (Opcode::Push(Value::Int(x)), Opcode::Mul) if x.is_positive() && (x as u64).is_power_of_two() => {
+            let power = (x as u64).ilog2();
+
+            (Opcode::Push(Value::Int(power as _)), Opcode::Shl)
+        },
+
+        // Dividing a number `x` by number `2^n` can be replaced by `x >> n`.
+        (Opcode::Push(Value::Int(x)), Opcode::Div) if x.is_positive() && (x as u64).is_power_of_two() => {
+            let power = (x as u64).ilog2();
+        
+            (Opcode::Push(Value::Int(power as _)), Opcode::Shr)
+        },
+
         (Opcode::Push(Value::Bool(true)), Opcode::And) => (Opcode::Nop, Opcode::Nop),
         (Opcode::Push(Value::Bool(false)), Opcode::And) => {
             (Opcode::Push(Value::Bool(false)), Opcode::Nop)
