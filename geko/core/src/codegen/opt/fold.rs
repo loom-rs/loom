@@ -74,22 +74,35 @@ pub fn try_fold(a: Opcode, b: Opcode, c: Opcode) -> Option<Opcode> {
 
 /// Performs fold optimization
 pub fn fold_optimization(mut chunk: Chunk) -> Chunk {
-    // If chunk has at least two instructions
-    if chunk.code.len() > 1 {
-        // Iterating chunk opcodes
-        for i in 0..(chunk.code.len() - 2) {
-            // Getting first and second opcodes
-            let first = chunk.code[i].clone();
-            let second = chunk.code[i + 1].clone();
-            let third = chunk.code[i + 2].clone();
+    let mut current_len = chunk.code.len();
+    let mut optimized_code_len = 0;
 
-            // Trying to fold
-            (chunk.code[i], chunk.code[i + 1], chunk.code[i + 2]) =
-                match try_fold(first.clone(), second.clone(), third.clone()) {
-                    Some(op) => (op, Opcode::Nop, Opcode::Nop),
-                    None => (first, second, third),
-                }
+    // Run opimizations until it becomes impossible to optimize.
+    while current_len != optimized_code_len {
+        current_len = optimized_code_len;
+
+        // If chunk has at least two instructions
+        if chunk.code.len() > 1 {
+            // Iterating chunk opcodes
+            for i in 0..(chunk.code.len() - 2) {
+                // Getting first and second opcodes
+                let first = chunk.code[i].clone();
+                let second = chunk.code[i + 1].clone();
+                let third = chunk.code[i + 2].clone();
+
+                // Trying to fold
+                (chunk.code[i], chunk.code[i + 1], chunk.code[i + 2]) =
+                    match try_fold(first.clone(), second.clone(), third.clone()) {
+                        Some(op) => (op, Opcode::Nop, Opcode::Nop),
+                        None => (first, second, third),
+                    }
+            }
         }
+
+        // Remove all Nop opcodes.
+        chunk.code.retain(|x| !matches!(x, Opcode::Nop));
+
+        optimized_code_len = chunk.code.len();
     }
 
     // Returning modified chunk
